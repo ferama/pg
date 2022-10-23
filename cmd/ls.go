@@ -4,17 +4,16 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"strings"
 	"text/tabwriter"
 
 	"github.com/ferama/pg/pkg/conf"
 	"github.com/ferama/pg/pkg/pool"
+	"github.com/ferama/pg/pkg/utils"
 	"github.com/spf13/cobra"
 )
 
 func init() {
 	rootCmd.AddCommand(recordCmd)
-
 }
 
 func listConnections() {
@@ -55,7 +54,6 @@ func listDatabases(connString string) {
 		}
 		fmt.Println(datname)
 	}
-
 }
 
 func listSchemas(connString string, db string) {
@@ -96,8 +94,8 @@ func listTables(connString string, db string, schema string) {
 
 	query := fmt.Sprintf(`
 		SELECT table_name 
-		FROM information_schema.tables 
-		WHERE table_schema = '%s'`, schema)
+		FROM information_schema.tables
+		WHERE table_schema = '%s' `, schema)
 	rows, err := conn.Query(context.Background(), query)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "QueryRow failed: %v\n", err)
@@ -116,6 +114,43 @@ func listTables(connString string, db string, schema string) {
 	}
 }
 
+func listColumns(connString, db, schema, table string) {
+	conn, err := pool.GetFromConf(connString, db)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Unable to connect to database: %v\n", err)
+		os.Exit(1)
+	}
+	defer conn.Close()
+
+	query := fmt.Sprintf(`
+		SELECT column_name, data_type, is_nullable
+		FROM information_schema.columns 
+		WHERE table_schema = '%s'
+		AND table_name = '%s' `, schema, table)
+	rows, err := conn.Query(context.Background(), query)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "QueryRow failed: %v\n", err)
+		os.Exit(1)
+	}
+	defer rows.Close()
+
+	w := tabwriter.NewWriter(os.Stdout, 5, 5, 5, ' ', 0)
+	fmt.Fprintln(w, "Name\tType\tNullable")
+	header := "---------"
+	fmt.Fprintf(w, "%s\t%s\t%s\n", header, header, header)
+	for rows.Next() {
+		var columnName, dataType, isNullable string
+		err = rows.Scan(&columnName, &dataType, &isNullable)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "QueryRow failed: %v\n", err)
+			os.Exit(1)
+		}
+		fmt.Fprintf(w, "%s\t%s\t%s\t\n", columnName, dataType, isNullable)
+	}
+
+	w.Flush()
+}
+
 var recordCmd = &cobra.Command{
 	Use:  "ls",
 	Args: cobra.MinimumNArgs(0),
@@ -124,23 +159,31 @@ var recordCmd = &cobra.Command{
 			listConnections()
 			return
 		}
-		parts := strings.Split(args[0], "/")
-		if parts[len(parts)-1] == "" {
-			parts = parts[:len(parts)-1]
+
+		path := utils.ParsePath(args[0])
+		if path.TableName != "" {
+			listColumns(
+				path.ConfigConnection,
+				path.DatabaseName,
+				path.SchemaName,
+				path.TableName,
+			)
+			return
 		}
-		switch len(parts) {
-		case 1:
-			conn := parts[0]
-			listDatabases(conn)
-		case 2:
-			conn := parts[0]
-			database := parts[1]
-			listSchemas(conn, database)
-		case 3:
-			conn := parts[0]
-			database := parts[1]
-			schema := parts[2]
-			listTables(conn, database, schema)
+		if path.SchemaName != "" {
+			listTables(
+				path.ConfigConnection,
+				path.DatabaseName,
+				path.SchemaName)
+			return
+		}
+		if path.DatabaseName != "" {
+			listSchemas(path.ConfigConnection, path.DatabaseName)
+			return
+		}
+		if path.ConfigConnection != "" {
+			listDatabases(path.ConfigConnection)
+			return
 		}
 	},
 }
