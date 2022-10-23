@@ -4,7 +4,7 @@ import (
 	"context"
 	"strings"
 
-	"github.com/ferama/gopigi/pkg/conf"
+	"github.com/ferama/pg/pkg/conf"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 

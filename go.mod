@@ -1,4 +1,4 @@
-module github.com/ferama/gopigi
+module github.com/ferama/pg
 
 go 1.19
 

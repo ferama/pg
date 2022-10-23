@@ -7,8 +7,8 @@ import (
 	"strings"
 	"text/tabwriter"
 
-	"github.com/ferama/gopigi/pkg/conf"
-	"github.com/ferama/gopigi/pkg/pool"
+	"github.com/ferama/pg/pkg/conf"
+	"github.com/ferama/pg/pkg/pool"
 	"github.com/spf13/cobra"
 )
 

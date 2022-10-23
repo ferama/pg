@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 
-	"github.com/ferama/gopigi/cmd"
+	"github.com/ferama/pg/cmd"
 	"github.com/spf13/viper"
 )
 
