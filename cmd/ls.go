@@ -13,7 +13,7 @@ import (
 )
 
 func init() {
-	rootCmd.AddCommand(recordCmd)
+	rootCmd.AddCommand(lsCmd)
 }
 
 func listConnections() {
@@ -38,9 +38,13 @@ func listDatabases(connString string) {
 	}
 	defer conn.Close()
 
-	rows, err := conn.Query(
-		context.Background(),
-		"select datname from pg_database where datistemplate = false")
+	query := `
+		SELECT d.datname, u.usename
+		FROM pg_database d
+		JOIN pg_user u ON (d.datdba = u.usesysid)
+		WHERE datistemplate = false
+	`
+	rows, err := conn.Query(context.Background(), query)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "QueryRow failed: %v\n", err)
 		os.Exit(1)
@@ -48,18 +52,18 @@ func listDatabases(connString string) {
 	defer rows.Close()
 
 	t := utils.GetTableWriter()
-	t.AppendHeader(table.Row{"Database"})
+	t.AppendHeader(table.Row{"Database", "Owner"})
 	defer t.Render()
 
 	for rows.Next() {
-		var datname string
-		err = rows.Scan(&datname)
+		var datname, owner string
+		err = rows.Scan(&datname, &owner)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "QueryRow failed: %v\n", err)
 			os.Exit(1)
 		}
 		t.AppendRow(table.Row{
-			datname,
+			datname, owner,
 		})
 	}
 }
@@ -72,9 +76,11 @@ func listSchemas(connString string, db string) {
 	}
 	defer conn.Close()
 
-	rows, err := conn.Query(
-		context.Background(),
-		"select schema_name from information_schema.schemata")
+	query := `
+		SELECT schema_name 
+		FROM information_schema.schemata
+	`
+	rows, err := conn.Query(context.Background(), query)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "QueryRow failed: %v\n", err)
 		os.Exit(1)
@@ -171,7 +177,7 @@ func listColumns(connString, db, schema, tableName string) {
 	}
 }
 
-var recordCmd = &cobra.Command{
+var lsCmd = &cobra.Command{
 	Use:  "ls",
 	Args: cobra.MinimumNArgs(0),
 	Run: func(cmd *cobra.Command, args []string) {
