@@ -4,11 +4,11 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"text/tabwriter"
 
 	"github.com/ferama/pg/pkg/conf"
 	"github.com/ferama/pg/pkg/pool"
 	"github.com/ferama/pg/pkg/utils"
+	"github.com/jedib0t/go-pretty/v6/table"
 	"github.com/spf13/cobra"
 )
 
@@ -18,14 +18,16 @@ func init() {
 
 func listConnections() {
 	c := conf.GetAvailableConnections()
-	w := tabwriter.NewWriter(os.Stdout, 5, 5, 5, ' ', 0)
-	fmt.Fprintln(w, "Connection")
-	header := "---------"
-	fmt.Fprintf(w, "%s\n", header)
+
+	t := utils.GetTableWriter()
+	t.AppendHeader(table.Row{"Connection"})
+	defer t.Render()
+
 	for _, item := range c {
-		fmt.Fprintln(w, item)
+		t.AppendRow(table.Row{
+			item,
+		})
 	}
-	w.Flush()
 }
 
 func listDatabases(connString string) {
@@ -45,6 +47,10 @@ func listDatabases(connString string) {
 	}
 	defer rows.Close()
 
+	t := utils.GetTableWriter()
+	t.AppendHeader(table.Row{"Database"})
+	defer t.Render()
+
 	for rows.Next() {
 		var datname string
 		err = rows.Scan(&datname)
@@ -52,7 +58,9 @@ func listDatabases(connString string) {
 			fmt.Fprintf(os.Stderr, "QueryRow failed: %v\n", err)
 			os.Exit(1)
 		}
-		fmt.Println(datname)
+		t.AppendRow(table.Row{
+			datname,
+		})
 	}
 }
 
@@ -73,6 +81,10 @@ func listSchemas(connString string, db string) {
 	}
 	defer rows.Close()
 
+	t := utils.GetTableWriter()
+	t.AppendHeader(table.Row{"Schema"})
+	defer t.Render()
+
 	for rows.Next() {
 		var schema string
 		err = rows.Scan(&schema)
@@ -80,7 +92,9 @@ func listSchemas(connString string, db string) {
 			fmt.Fprintf(os.Stderr, "QueryRow failed: %v\n", err)
 			os.Exit(1)
 		}
-		fmt.Println(schema)
+		t.AppendRow(table.Row{
+			schema,
+		})
 	}
 }
 
@@ -103,6 +117,10 @@ func listTables(connString string, db string, schema string) {
 	}
 	defer rows.Close()
 
+	t := utils.GetTableWriter()
+	t.AppendHeader(table.Row{"Schema"})
+	defer t.Render()
+
 	for rows.Next() {
 		var tableName string
 		err = rows.Scan(&tableName)
@@ -110,11 +128,13 @@ func listTables(connString string, db string, schema string) {
 			fmt.Fprintf(os.Stderr, "QueryRow failed: %v\n", err)
 			os.Exit(1)
 		}
-		fmt.Println(tableName)
+		t.AppendRow(table.Row{
+			tableName,
+		})
 	}
 }
 
-func listColumns(connString, db, schema, table string) {
+func listColumns(connString, db, schema, tableName string) {
 	conn, err := pool.GetFromConf(connString, db)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Unable to connect to database: %v\n", err)
@@ -126,7 +146,7 @@ func listColumns(connString, db, schema, table string) {
 		SELECT column_name, data_type, is_nullable
 		FROM information_schema.columns 
 		WHERE table_schema = '%s'
-		AND table_name = '%s' `, schema, table)
+		AND table_name = '%s' `, schema, tableName)
 	rows, err := conn.Query(context.Background(), query)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "QueryRow failed: %v\n", err)
@@ -134,10 +154,10 @@ func listColumns(connString, db, schema, table string) {
 	}
 	defer rows.Close()
 
-	w := tabwriter.NewWriter(os.Stdout, 5, 5, 5, ' ', 0)
-	fmt.Fprintln(w, "Name\tType\tNullable")
-	header := "---------"
-	fmt.Fprintf(w, "%s\t%s\t%s\n", header, header, header)
+	t := utils.GetTableWriter()
+	t.AppendHeader(table.Row{"Name", "Type", "Nullable"})
+	defer t.Render()
+
 	for rows.Next() {
 		var columnName, dataType, isNullable string
 		err = rows.Scan(&columnName, &dataType, &isNullable)
@@ -145,10 +165,10 @@ func listColumns(connString, db, schema, table string) {
 			fmt.Fprintf(os.Stderr, "QueryRow failed: %v\n", err)
 			os.Exit(1)
 		}
-		fmt.Fprintf(w, "%s\t%s\t%s\t\n", columnName, dataType, isNullable)
+		t.AppendRow(table.Row{
+			columnName, dataType, isNullable,
+		})
 	}
-
-	w.Flush()
 }
 
 var recordCmd = &cobra.Command{
