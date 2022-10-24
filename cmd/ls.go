@@ -1,12 +1,10 @@
 package cmd
 
 import (
-	"context"
 	"fmt"
-	"os"
 
 	"github.com/ferama/pg/pkg/conf"
-	"github.com/ferama/pg/pkg/pool"
+	"github.com/ferama/pg/pkg/db"
 	"github.com/ferama/pg/pkg/utils"
 	"github.com/jedib0t/go-pretty/v6/table"
 	"github.com/spf13/cobra"
@@ -31,13 +29,6 @@ func listConnections() {
 }
 
 func listDatabases(connString string) {
-	conn, err := pool.GetFromConf(connString, "")
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Unable to connect to database: %v\n", err)
-		os.Exit(1)
-	}
-	defer conn.Close()
-
 	query := `
 		SELECT d.datname, u.usename
 		FROM pg_database d
@@ -45,113 +36,29 @@ func listDatabases(connString string) {
 		WHERE datistemplate = false
 		ORDER BY d.datname
 	`
-	rows, err := conn.Query(context.Background(), query)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "QueryRow failed: %v\n", err)
-		os.Exit(1)
-	}
-	defer rows.Close()
-
-	t := utils.GetTableWriter()
-	t.AppendHeader(table.Row{"Database", "Owner"})
-	defer t.Render()
-
-	for rows.Next() {
-		var datname, owner string
-		err = rows.Scan(&datname, &owner)
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "QueryRow failed: %v\n", err)
-			os.Exit(1)
-		}
-		t.AppendRow(table.Row{
-			datname, owner,
-		})
-	}
+	db.PrintQueryResults(connString, "", query, []string{"Database", "Owner"})
 }
 
-func listSchemas(connString string, db string) {
-	conn, err := pool.GetFromConf(connString, db)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Unable to connect to database: %v\n", err)
-		os.Exit(1)
-	}
-	defer conn.Close()
-
+func listSchemas(connString string, dbName string) {
 	query := `
 		SELECT schema_name 
 		FROM information_schema.schemata
 		ORDER BY schema_name
 	`
-	rows, err := conn.Query(context.Background(), query)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "QueryRow failed: %v\n", err)
-		os.Exit(1)
-	}
-	defer rows.Close()
-
-	t := utils.GetTableWriter()
-	t.AppendHeader(table.Row{"Schema"})
-	defer t.Render()
-
-	for rows.Next() {
-		var schema string
-		err = rows.Scan(&schema)
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "QueryRow failed: %v\n", err)
-			os.Exit(1)
-		}
-		t.AppendRow(table.Row{
-			schema,
-		})
-	}
+	db.PrintQueryResults(connString, dbName, query, []string{"Schema"})
 }
 
-func listTables(connString string, db string, schema string) {
-	conn, err := pool.GetFromConf(connString, db)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Unable to connect to database: %v\n", err)
-		os.Exit(1)
-	}
-	defer conn.Close()
-
+func listTables(connString string, dbName string, schema string) {
 	query := fmt.Sprintf(`
 		SELECT table_name 
 		FROM information_schema.tables
 		WHERE table_schema = '%s' 
 		ORDER BY table_name
 		`, schema)
-	rows, err := conn.Query(context.Background(), query)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "QueryRow failed: %v\n", err)
-		os.Exit(1)
-	}
-	defer rows.Close()
-
-	t := utils.GetTableWriter()
-	t.AppendHeader(table.Row{"Schema"})
-	defer t.Render()
-
-	for rows.Next() {
-		var tableName string
-		err = rows.Scan(&tableName)
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "QueryRow failed: %v\n", err)
-			os.Exit(1)
-		}
-		t.AppendRow(table.Row{
-			tableName,
-		})
-	}
+	db.PrintQueryResults(connString, dbName, query, []string{"Table"})
 }
 
-func listColumns(connString, db, schema, tableName string) {
-	conn, err := pool.GetFromConf(connString, db)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Unable to connect to database: %v\n", err)
-		os.Exit(1)
-	}
-	defer conn.Close()
-
+func listColumns(connString, dbName, schema, tableName string) {
 	query := fmt.Sprintf(`
 		SELECT column_name, data_type, is_nullable
 		FROM information_schema.columns 
@@ -159,28 +66,7 @@ func listColumns(connString, db, schema, tableName string) {
 		AND table_name = '%s' 
 		ORDER BY column_name
 		`, schema, tableName)
-	rows, err := conn.Query(context.Background(), query)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "QueryRow failed: %v\n", err)
-		os.Exit(1)
-	}
-	defer rows.Close()
-
-	t := utils.GetTableWriter()
-	t.AppendHeader(table.Row{"Name", "Type", "Nullable"})
-	defer t.Render()
-
-	for rows.Next() {
-		var columnName, dataType, isNullable string
-		err = rows.Scan(&columnName, &dataType, &isNullable)
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "QueryRow failed: %v\n", err)
-			os.Exit(1)
-		}
-		t.AppendRow(table.Row{
-			columnName, dataType, isNullable,
-		})
-	}
+	db.PrintQueryResults(connString, dbName, query, []string{"Column", "Data Type", "Nullable"})
 }
 
 var lsCmd = &cobra.Command{
