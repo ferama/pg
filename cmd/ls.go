@@ -43,6 +43,7 @@ func listDatabases(connString string) {
 		FROM pg_database d
 		JOIN pg_user u ON (d.datdba = u.usesysid)
 		WHERE datistemplate = false
+		ORDER BY d.datname
 	`
 	rows, err := conn.Query(context.Background(), query)
 	if err != nil {
@@ -79,6 +80,7 @@ func listSchemas(connString string, db string) {
 	query := `
 		SELECT schema_name 
 		FROM information_schema.schemata
+		ORDER BY schema_name
 	`
 	rows, err := conn.Query(context.Background(), query)
 	if err != nil {
@@ -115,7 +117,9 @@ func listTables(connString string, db string, schema string) {
 	query := fmt.Sprintf(`
 		SELECT table_name 
 		FROM information_schema.tables
-		WHERE table_schema = '%s' `, schema)
+		WHERE table_schema = '%s' 
+		ORDER BY table_name
+		`, schema)
 	rows, err := conn.Query(context.Background(), query)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "QueryRow failed: %v\n", err)
@@ -152,7 +156,9 @@ func listColumns(connString, db, schema, tableName string) {
 		SELECT column_name, data_type, is_nullable
 		FROM information_schema.columns 
 		WHERE table_schema = '%s'
-		AND table_name = '%s' `, schema, tableName)
+		AND table_name = '%s' 
+		ORDER BY column_name
+		`, schema, tableName)
 	rows, err := conn.Query(context.Background(), query)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "QueryRow failed: %v\n", err)
