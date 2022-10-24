@@ -19,12 +19,6 @@ func castType(item any) any {
 		}
 	}
 
-	// if c, ok := item.(pgtype.B); ok {
-	// 	if tmp, err := c.Value(); err == nil {
-	// 		value = tmp
-	// 	}
-	// }
-
 	return value
 }
 
@@ -49,7 +43,6 @@ func PrintQueryResults(connString, dbName, query string, fields []string) error 
 	t.AppendHeader(tr)
 	defer t.Render()
 
-	// https://github.com/GoAdminGroup/go-admin/blob/master/modules/db/performer.go
 	for rows.Next() {
 		res, _ := rows.Values()
 		var tr table.Row
