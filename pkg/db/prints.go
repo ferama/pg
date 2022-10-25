@@ -41,7 +41,11 @@ func PrintQueryResults(connString, dbName, query string, fields []string) error 
 		tr = append(tr, f)
 	}
 	t.AppendHeader(tr)
-	defer t.Render()
+	defer func() {
+		fmt.Println()
+		t.Render()
+		fmt.Println()
+	}()
 
 	for rows.Next() {
 		res, _ := rows.Values()

@@ -69,13 +69,21 @@ func listTables(connString string, dbName string, schema string) {
 
 func listColumns(connString, dbName, schema, tableName string) {
 	query := fmt.Sprintf(`
-		SELECT column_name, data_type, is_nullable
-		FROM information_schema.columns 
-		WHERE table_schema = '%s'
-		AND table_name = '%s' 
-		ORDER BY column_name
+		SELECT 
+			c.column_name, c.data_type, c.is_nullable,
+			c.numeric_precision, c.character_maximum_length, constraint_type
+		FROM information_schema.table_constraints tc 
+		JOIN information_schema.constraint_column_usage AS ccu 
+			USING (constraint_schema, constraint_name) 
+		RIGHT JOIN information_schema.columns AS c 
+			ON c.table_schema = tc.constraint_schema
+			AND tc.table_name = c.table_name AND ccu.column_name = c.column_name
+		WHERE c.table_schema = '%s'
+			AND c.table_name = '%s' 
+		ORDER BY c.column_name
 		`, schema, tableName)
-	err := db.PrintQueryResults(connString, dbName, query, []string{"Column", "Data Type", "Nullable"})
+	err := db.PrintQueryResults(connString, dbName, query, []string{
+		"Column", "Data Type", "Nullable", "Numeric Precision", "Max Lenght", "Key"})
 	if err != nil {
 		fmt.Println(err)
 	}
