@@ -32,10 +32,11 @@ func listDatabases(connString string) {
 	query := `
 		SELECT d.datname, u.usename
 		FROM pg_database d
-		JOIN pg_user u ON (d.datdba = u.usesysid)
+		LEFT JOIN pg_user u ON (d.datdba = u.usesysid)
 		WHERE datistemplate = false
 		ORDER BY d.datname
 	`
+
 	err := db.PrintQueryResults(connString, "", query, []string{"Database", "Owner"})
 	if err != nil {
 		fmt.Println(err)
@@ -90,8 +91,10 @@ func listColumns(connString, dbName, schema, tableName string) {
 }
 
 var lsCmd = &cobra.Command{
-	Use:  "ls",
-	Args: cobra.MinimumNArgs(0),
+	Use:     "ls",
+	Aliases: []string{"list"},
+	Args:    cobra.MinimumNArgs(0),
+	// https://github.com/spf13/cobra/blob/main/shell_completions.md
 	Run: func(cmd *cobra.Command, args []string) {
 		if len(args) == 0 {
 			listConnections()
