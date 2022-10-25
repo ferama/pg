@@ -36,7 +36,10 @@ func listDatabases(connString string) {
 		WHERE datistemplate = false
 		ORDER BY d.datname
 	`
-	db.PrintQueryResults(connString, "", query, []string{"Database", "Owner"})
+	err := db.PrintQueryResults(connString, "", query, []string{"Database", "Owner"})
+	if err != nil {
+		fmt.Println(err)
+	}
 }
 
 func listSchemas(connString string, dbName string) {
