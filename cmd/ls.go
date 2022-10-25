@@ -30,10 +30,10 @@ func listConnections() {
 
 func listDatabases(connString string) {
 	query := `
-		SELECT d.datname, u.usename
+		SELECT d.datname, r.rolname
 		FROM pg_database d
-		LEFT JOIN pg_user u ON (d.datdba = u.usesysid)
-		WHERE datistemplate = false
+		LEFT JOIN pg_roles r ON (d.datdba = r.oid)
+		WHERE d.datistemplate = false
 		ORDER BY d.datname
 	`
 
