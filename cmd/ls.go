@@ -83,7 +83,7 @@ func listColumns(connString, dbName, schema, tableName string) {
 		ORDER BY c.column_name
 		`, schema, tableName)
 	err := db.PrintQueryResults(connString, dbName, query, []string{
-		"Column", "Data Type", "Nullable", "Numeric Precision", "Max Lenght", "Key"})
+		"Column", "Data Type", "Nullable", "Numeric Precision", "Max Length", "Key"})
 	if err != nil {
 		fmt.Println(err)
 	}
