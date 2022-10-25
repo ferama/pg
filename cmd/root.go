@@ -6,7 +6,7 @@ func init() {
 }
 
 var rootCmd = &cobra.Command{
-	Use:  "gopigi",
+	Use:  "pg",
 	Args: cobra.MinimumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 	},

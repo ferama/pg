@@ -2,19 +2,26 @@ package main
 
 import (
 	"fmt"
+	"os"
+	"os/user"
+	"path/filepath"
 
 	"github.com/ferama/pg/cmd"
 	"github.com/spf13/viper"
 )
 
 func init() {
-	viper.SetConfigFile("conf.yaml")
+	viper.SetConfigName("conf")
 	viper.SetConfigType("yaml")
-	// viper.AddConfigPath("$HOME/.gopigi")
+
+	usr, _ := user.Current()
+	homeConf := filepath.Join(usr.HomeDir, ".pg/")
 	viper.AddConfigPath(".")
+	viper.AddConfigPath(homeConf)
 	err := viper.ReadInConfig() // Find and read the config file
 	if err != nil {             // Handle errors reading the config file
-		panic(fmt.Errorf("fatal error config file: %w", err))
+		fmt.Println(fmt.Errorf("fatal error config file: %w", err))
+		os.Exit(1)
 	}
 }
 
