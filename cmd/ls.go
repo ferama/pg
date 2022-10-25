@@ -45,7 +45,10 @@ func listSchemas(connString string, dbName string) {
 		FROM information_schema.schemata
 		ORDER BY schema_name
 	`
-	db.PrintQueryResults(connString, dbName, query, []string{"Schema"})
+	err := db.PrintQueryResults(connString, dbName, query, []string{"Schema"})
+	if err != nil {
+		fmt.Println(err)
+	}
 }
 
 func listTables(connString string, dbName string, schema string) {
@@ -55,7 +58,10 @@ func listTables(connString string, dbName string, schema string) {
 		WHERE table_schema = '%s' 
 		ORDER BY table_name
 		`, schema)
-	db.PrintQueryResults(connString, dbName, query, []string{"Table"})
+	err := db.PrintQueryResults(connString, dbName, query, []string{"Table"})
+	if err != nil {
+		fmt.Println(err)
+	}
 }
 
 func listColumns(connString, dbName, schema, tableName string) {
@@ -66,7 +72,10 @@ func listColumns(connString, dbName, schema, tableName string) {
 		AND table_name = '%s' 
 		ORDER BY column_name
 		`, schema, tableName)
-	db.PrintQueryResults(connString, dbName, query, []string{"Column", "Data Type", "Nullable"})
+	err := db.PrintQueryResults(connString, dbName, query, []string{"Column", "Data Type", "Nullable"})
+	if err != nil {
+		fmt.Println(err)
+	}
 }
 
 var lsCmd = &cobra.Command{

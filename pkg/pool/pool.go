@@ -2,24 +2,39 @@ package pool
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"strings"
 
 	"github.com/ferama/pg/pkg/conf"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-func GetFromConf(connString string, dbname string) (*pgxpool.Pool, error) {
-	url, err := conf.GetURL(connString)
+func GetPoolFromConf(connName string, dbname string) (*pgxpool.Pool, error) {
+	url, err := conf.GetDBConnURL(connName)
 	if err != nil {
 		return nil, err
 	}
 
 	if dbname != "" {
-		parts := strings.Split(url, "/")
-		// parts without dbname
-		nodb := parts[:len(parts)-1]
+		withProto := strings.Split(url, "//")
+		if len(withProto) == 1 {
+			return nil, errors.New("bad connection string in config")
+		}
+		conn := withProto[1]
+		parts := strings.Split(conn, "/")
+		var nodb []string
+
+		if len(parts) == 1 {
+			// do not have database name in conn url
+			nodb = parts
+		} else {
+			// have database name in conn url
+			nodb = parts[:len(parts)-1]
+		}
 		newdb := append(nodb, dbname)
 		url = strings.Join(newdb, "/")
+		url = fmt.Sprintf("%s//%s", withProto[0], url)
 	}
 
 	config, err := pgxpool.ParseConfig(url)

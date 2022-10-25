@@ -8,7 +8,7 @@ import (
 )
 
 func GetTableColumns(connString, dbName, schema, tableName string) ([]string, error) {
-	conn, err := pool.GetFromConf(connString, dbName)
+	conn, err := pool.GetPoolFromConf(connString, dbName)
 	if err != nil {
 		return nil, fmt.Errorf("unable to connect to database: %v", err)
 	}

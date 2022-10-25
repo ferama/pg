@@ -23,7 +23,7 @@ func castType(item any) any {
 }
 
 func PrintQueryResults(connString, dbName, query string, fields []string) error {
-	conn, err := pool.GetFromConf(connString, dbName)
+	conn, err := pool.GetPoolFromConf(connString, dbName)
 	if err != nil {
 		return fmt.Errorf("unable to connect to database: %v", err)
 	}

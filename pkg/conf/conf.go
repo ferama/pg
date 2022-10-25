@@ -22,7 +22,7 @@ func GetAvailableConnections() []string {
 	return res
 }
 
-func GetURL(connString string) (string, error) {
+func GetDBConnURL(connName string) (string, error) {
 	var conf Conf
 
 	err := viper.Unmarshal(&conf)
@@ -31,7 +31,7 @@ func GetURL(connString string) (string, error) {
 	}
 
 	for _, i := range conf.Connections {
-		if i.Name == connString {
+		if i.Name == connName {
 			return i.Url, nil
 		}
 	}
