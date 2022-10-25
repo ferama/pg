@@ -52,7 +52,11 @@ func PrintQueryResults(connString, dbName, query string, fields []string) error 
 		var tr table.Row
 
 		for _, item := range res {
-			tr = append(tr, castType(item))
+			if item == nil {
+				tr = append(tr, "-")
+			} else {
+				tr = append(tr, castType(item))
+			}
 		}
 		t.AppendRow(tr)
 	}
