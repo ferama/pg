@@ -101,8 +101,12 @@ func listColumns(connString, dbName, schema, tableName string) {
 var lsCmd = &cobra.Command{
 	Use:     "ls",
 	Aliases: []string{"list"},
+	Short:   "List configuration, database, schemas, tables and fields",
 	Args:    cobra.MinimumNArgs(0),
 	// https://github.com/spf13/cobra/blob/main/shell_completions.md
+	ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		return nil, cobra.ShellCompDirectiveNoFileComp
+	},
 	Run: func(cmd *cobra.Command, args []string) {
 		if len(args) == 0 {
 			listConnections()

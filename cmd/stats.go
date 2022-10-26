@@ -74,8 +74,9 @@ func init() {
 }
 
 var statsCmd = &cobra.Command{
-	Use:  "stats",
-	Args: cobra.MinimumNArgs(1),
+	Use:   "stats",
+	Args:  cobra.MinimumNArgs(1),
+	Short: "Show basic stats",
 	Run: func(cmd *cobra.Command, args []string) {
 		path := utils.ParsePath(args[0])
 		if path.ConfigConnection != "" {

@@ -30,8 +30,9 @@ func init() {
 }
 
 var headCmd = &cobra.Command{
-	Use:  "head",
-	Args: cobra.MinimumNArgs(1),
+	Use:   "head",
+	Args:  cobra.MinimumNArgs(1),
+	Short: "Display first table records",
 	Run: func(cmd *cobra.Command, args []string) {
 
 		path := utils.ParsePath(args[0])

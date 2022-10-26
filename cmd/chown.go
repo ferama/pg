@@ -15,8 +15,9 @@ func init() {
 }
 
 var chownCmd = &cobra.Command{
-	Use:  "chown",
-	Args: cobra.MinimumNArgs(2),
+	Use:   "chown",
+	Args:  cobra.MinimumNArgs(2),
+	Short: "Set database owner",
 	Run: func(cmd *cobra.Command, args []string) {
 		path := utils.ParsePath(args[0])
 		if path.DatabaseName != "" {
