@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/ferama/pg/pkg/conf"
 	"github.com/ferama/pg/pkg/db"
@@ -44,11 +45,11 @@ func listDatabases(connString string) {
 		ORDER BY d.datname
 	`
 
-	err := db.PrintQueryResults(connString, "", query,
-		[]string{"Database", "Owner", "Active Connections"})
+	items, err := db.Query(connString, "", query)
 	if err != nil {
 		fmt.Println(err)
 	}
+	db.PrintQueryResults(items, []string{"Database", "Owner", "Active Connections"})
 }
 
 func listSchemas(connString string, dbName string) {
@@ -57,10 +58,12 @@ func listSchemas(connString string, dbName string) {
 		FROM information_schema.schemata
 		ORDER BY schema_name
 	`
-	err := db.PrintQueryResults(connString, dbName, query, []string{"Schema"})
+	items, err := db.Query(connString, dbName, query)
 	if err != nil {
 		fmt.Println(err)
+		os.Exit(1)
 	}
+	db.PrintQueryResults(items, []string{"Schema"})
 }
 
 func listTables(connString string, dbName string, schema string) {
@@ -70,10 +73,13 @@ func listTables(connString string, dbName string, schema string) {
 		WHERE table_schema = '%s' 
 		ORDER BY table_name
 		`, schema)
-	err := db.PrintQueryResults(connString, dbName, query, []string{"Table"})
+
+	items, err := db.Query(connString, dbName, query)
 	if err != nil {
 		fmt.Println(err)
+		os.Exit(1)
 	}
+	db.PrintQueryResults(items, []string{"Table"})
 }
 
 func listColumns(connString, dbName, schema, tableName string) {
@@ -91,11 +97,14 @@ func listColumns(connString, dbName, schema, tableName string) {
 			AND c.table_name = '%s' 
 		ORDER BY c.column_name
 		`, schema, tableName)
-	err := db.PrintQueryResults(connString, dbName, query, []string{
-		"Column", "Data Type", "Nullable", "Numeric Precision", "Max Length", "Key"})
+
+	items, err := db.Query(connString, dbName, query)
 	if err != nil {
 		fmt.Println(err)
+		os.Exit(1)
 	}
+	db.PrintQueryResults(items, []string{
+		"Column", "Data Type", "Nullable", "Numeric Precision", "Max Length", "Key"})
 }
 
 var lsCmd = &cobra.Command{

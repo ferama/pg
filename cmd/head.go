@@ -19,10 +19,12 @@ func headTable(connString, dbName, schema, tableName string) {
 		LIMIT 10
 		`, schema, tableName)
 
-	err := db.PrintQueryResults(connString, dbName, query, fields)
+	items, err := db.Query(connString, dbName, query)
 	if err != nil {
 		fmt.Println(err)
+		os.Exit(1)
 	}
+	db.PrintQueryResults(items, fields)
 }
 
 func init() {
