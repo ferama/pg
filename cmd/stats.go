@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/ferama/pg/pkg/autocomplete"
 	"github.com/ferama/pg/pkg/pool"
 	"github.com/ferama/pg/pkg/utils"
 	"github.com/jedib0t/go-pretty/v6/table"
@@ -74,9 +75,10 @@ func init() {
 }
 
 var statsCmd = &cobra.Command{
-	Use:   "stats",
-	Args:  cobra.MinimumNArgs(1),
-	Short: "Show basic stats",
+	Use:               "stats",
+	Args:              cobra.MinimumNArgs(1),
+	Short:             "Show basic stats",
+	ValidArgsFunction: autocomplete.Path(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		path := utils.ParsePath(args[0])
 		if path.ConfigConnection != "" {

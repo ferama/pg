@@ -10,6 +10,7 @@ type PathParts struct {
 }
 
 func ParsePath(path string) *PathParts {
+	path = strings.Replace(path, " ", "", -1)
 	parts := strings.Split(path, "/")
 	if parts[len(parts)-1] == "" {
 		parts = parts[:len(parts)-1]

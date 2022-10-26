@@ -3,7 +3,9 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"strings"
 
+	"github.com/ferama/pg/pkg/autocomplete"
 	"github.com/ferama/pg/pkg/conf"
 	"github.com/ferama/pg/pkg/db"
 	"github.com/ferama/pg/pkg/utils"
@@ -113,16 +115,15 @@ var lsCmd = &cobra.Command{
 	Short:   "List configuration, database, schemas, tables and fields",
 	Args:    cobra.MinimumNArgs(0),
 	// https://github.com/spf13/cobra/blob/main/shell_completions.md
-	ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		return nil, cobra.ShellCompDirectiveNoFileComp
-	},
+	ValidArgsFunction: autocomplete.Path(4),
 	Run: func(cmd *cobra.Command, args []string) {
 		if len(args) == 0 {
 			listConnections()
 			return
 		}
 
-		path := utils.ParsePath(args[0])
+		path := utils.ParsePath(strings.Join(args, " "))
+
 		if path.TableName != "" {
 			listColumns(
 				path.ConfigConnection,

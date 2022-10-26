@@ -3,7 +3,9 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"strings"
 
+	"github.com/ferama/pg/pkg/autocomplete"
 	"github.com/ferama/pg/pkg/db"
 	"github.com/ferama/pg/pkg/utils"
 	"github.com/spf13/cobra"
@@ -32,12 +34,14 @@ func init() {
 }
 
 var headCmd = &cobra.Command{
-	Use:   "head",
-	Args:  cobra.MinimumNArgs(1),
-	Short: "Display first table records",
+	Use:               "head",
+	Args:              cobra.MinimumNArgs(1),
+	Short:             "Display first table records",
+	ValidArgsFunction: autocomplete.Path(4),
 	Run: func(cmd *cobra.Command, args []string) {
 
-		path := utils.ParsePath(args[0])
+		path := utils.ParsePath(strings.Join(args, " "))
+
 		if path.TableName != "" {
 			headTable(
 				path.ConfigConnection,
@@ -46,7 +50,7 @@ var headCmd = &cobra.Command{
 				path.TableName,
 			)
 		} else {
-			fmt.Fprintln(os.Stderr, "table name not found")
+			fmt.Fprintf(os.Stderr, "table '%s' not found", path.TableName)
 			os.Exit(1)
 		}
 	},
