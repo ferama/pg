@@ -19,7 +19,11 @@ func listConnections() {
 
 	t := utils.GetTableWriter()
 	t.AppendHeader(table.Row{"Connection"})
-	defer t.Render()
+	defer func() {
+		fmt.Println()
+		t.Render()
+		fmt.Println()
+	}()
 
 	for _, item := range c {
 		t.AppendRow(table.Row{

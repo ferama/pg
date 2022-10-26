@@ -18,6 +18,7 @@ func init() {
 	homeConf := filepath.Join(usr.HomeDir, ".pg/")
 	viper.AddConfigPath(".")
 	viper.AddConfigPath(homeConf)
+	viper.AutomaticEnv()
 	err := viper.ReadInConfig() // Find and read the config file
 	if err != nil {             // Handle errors reading the config file
 		fmt.Println(fmt.Errorf("fatal error config file: %w", err))
