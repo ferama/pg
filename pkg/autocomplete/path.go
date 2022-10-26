@@ -57,7 +57,7 @@ func Path(level int) func(cmd *cobra.Command, args []string, toComplete string) 
 				FROM information_schema.schemata
 				ORDER BY schema_name
 			`
-			items, err := db.Query(path.ConfigConnection, "", query)
+			items, err := db.Query(path.ConfigConnection, path.DatabaseName, query)
 			if err != nil {
 				return nil, shellDirective
 			}
