@@ -30,14 +30,18 @@ func listConnections() {
 
 func listDatabases(connString string) {
 	query := `
-		SELECT d.datname, r.rolname
+		SELECT d.datname, r.rolname, numbackends
 		FROM pg_database d
-		LEFT JOIN pg_roles r ON (d.datdba = r.oid)
+		LEFT JOIN pg_roles r 
+			ON (d.datdba = r.oid)
+		LEFT JOIN pg_stat_database  s
+			ON s.datname = d.datname
 		WHERE d.datistemplate = false
 		ORDER BY d.datname
 	`
 
-	err := db.PrintQueryResults(connString, "", query, []string{"Database", "Owner"})
+	err := db.PrintQueryResults(connString, "", query,
+		[]string{"Database", "Owner", "Active Connections"})
 	if err != nil {
 		fmt.Println(err)
 	}
