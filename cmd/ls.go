@@ -50,6 +50,7 @@ func listDatabases(connString string) {
 	items, err := db.Query(connString, "", query)
 	if err != nil {
 		fmt.Println(err)
+		os.Exit(1)
 	}
 	db.PrintQueryResults(items, []string{"Database", "Owner", "Active Connections"})
 }

@@ -11,6 +11,32 @@ import (
 	"github.com/spf13/cobra"
 )
 
+func headGetWhereCondition(filters []string) (string, error) {
+	validSplits := []string{"=", "!=", ">", "<", "<=", ">="}
+
+	where := ""
+	if len(filters) > 0 {
+		conditions := make([]string, 0)
+		for _, f := range filters {
+			t := ""
+			for _, vs := range validSplits {
+				parts := strings.Split(f, vs)
+				if len(parts) != 2 {
+					continue
+				}
+				t = fmt.Sprintf("%s%s'%s'", parts[0], vs, parts[1])
+			}
+			if t == "" {
+				return "", fmt.Errorf("invalid filter: '%s'", f)
+			}
+			conditions = append(conditions, t)
+		}
+		where = strings.Join(conditions, " AND ")
+		where = fmt.Sprintf("AND %s", where)
+	}
+	return where, nil
+}
+
 func headTable(
 	connString, dbName, schema, tableName string,
 	columns, filters []string,
@@ -23,23 +49,18 @@ func headTable(
 		cols = strings.Join(columns, ",")
 		fields = columns
 	}
-	where := ""
-	if len(filters) > 0 {
-		conditions := make([]string, 0)
-		for _, f := range filters {
-			parts := strings.Split(f, "=")
-			t := fmt.Sprintf("%s='%s'", parts[0], parts[1])
-			conditions = append(conditions, t)
-		}
-		where = strings.Join(conditions, " AND ")
-		where = fmt.Sprintf("AND %s", where)
+
+	whereConditions, err := headGetWhereCondition(filters)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
 	}
 	query := fmt.Sprintf(`
 		SELECT %s
 		FROM %s.%s
 		WHERE true %s
 		LIMIT 10
-		`, cols, schema, tableName, where)
+		`, cols, schema, tableName, whereConditions)
 
 	items, err := db.Query(connString, dbName, query)
 	if err != nil {
