@@ -94,9 +94,10 @@ func listColumns(connString, dbName, schema, tableName string) {
 			c.column_name as column, 
 			c.data_type as "data type", 
 			c.is_nullable as nullable,
-			c.numeric_precision, 
+			c.numeric_precision as "precision", 
 			c.character_maximum_length as "max length", 
-			constraint_type as key
+			constraint_type as key,
+			ccu.table_name as "key table"
 		FROM information_schema.table_constraints tc 
 		JOIN information_schema.constraint_column_usage AS ccu 
 			USING (constraint_schema, constraint_name) 
