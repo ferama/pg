@@ -10,9 +10,8 @@ type PathParts struct {
 }
 
 func ParsePath(path string) *PathParts {
-	path = strings.Replace(path, " ", "", -1)
 	parts := strings.Split(path, "/")
-	if parts[len(parts)-1] == "" {
+	if !strings.HasSuffix(path, "/") {
 		parts = parts[:len(parts)-1]
 	}
 	pp := &PathParts{}

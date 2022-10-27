@@ -18,16 +18,28 @@ func flatArray(items [][]string) []string {
 	return ret
 }
 
-// https://github.com/spf13/cobra/blob/main/shell_completions.md
 func Path(level int) func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 	return func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		shellDirective := cobra.ShellCompDirectiveNoFileComp
+		shellDirective := cobra.ShellCompDirectiveNoFileComp | cobra.ShellCompDirectiveNoSpace
 
-		if len(args) >= level {
+		parts := strings.Split(toComplete, "/")
+
+		basePath := ""
+		suffix := ""
+		if strings.HasSuffix(toComplete, "/") {
+			basePath = strings.Join(parts, "/")
+			basePath = strings.TrimSuffix(basePath, "/")
+		} else {
+			basePath = strings.Join(parts[:len(parts)-1], "/")
+		}
+
+		path := utils.ParsePath(toComplete)
+
+		if len(parts)-1 >= level {
 			return nil, shellDirective
 		}
 
-		if len(args) == 0 {
+		if len(parts) == 1 {
 			items := conf.GetAvailableConnections()
 			for i := range items {
 				items[i] = fmt.Sprintf("%s/", items[i])
@@ -35,20 +47,22 @@ func Path(level int) func(cmd *cobra.Command, args []string, toComplete string) 
 			return items, shellDirective
 		}
 
-		path := utils.ParsePath(strings.Join(args, " "))
-
 		if path.SchemaName != "" && level > 3 {
 			query := fmt.Sprintf(`
-			SELECT table_name 
-			FROM information_schema.tables
-			WHERE table_schema = '%s' 
-			ORDER BY table_name
-			`, path.SchemaName)
+				SELECT table_name 
+				FROM information_schema.tables
+				WHERE table_schema = '%s' 
+				ORDER BY table_name
+				`, path.SchemaName)
 			items, err := db.Query(path.ConfigConnection, path.DatabaseName, query)
 			if err != nil {
 				return nil, shellDirective
 			}
-			return flatArray(items), shellDirective
+			ret := flatArray(items)
+			for i := range ret {
+				ret[i] = fmt.Sprintf("%s/%s%s", basePath, ret[i], suffix)
+			}
+			return ret, shellDirective
 		}
 
 		if path.DatabaseName != "" && level > 2 {
@@ -61,7 +75,11 @@ func Path(level int) func(cmd *cobra.Command, args []string, toComplete string) 
 			if err != nil {
 				return nil, shellDirective
 			}
-			return flatArray(items), shellDirective
+			ret := flatArray(items)
+			for i := range ret {
+				ret[i] = fmt.Sprintf("%s/%s%s", basePath, ret[i], suffix)
+			}
+			return ret, shellDirective
 		}
 
 		if path.ConfigConnection != "" && level > 1 {
@@ -75,7 +93,11 @@ func Path(level int) func(cmd *cobra.Command, args []string, toComplete string) 
 			if err != nil {
 				return nil, shellDirective
 			}
-			return flatArray(items), shellDirective
+			ret := flatArray(items)
+			for i := range ret {
+				ret[i] = fmt.Sprintf("%s/%s%s", basePath, ret[i], suffix)
+			}
+			return ret, shellDirective
 		}
 
 		return nil, shellDirective
