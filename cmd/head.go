@@ -42,12 +42,12 @@ func headTable(
 	columns, filters []string,
 ) {
 
-	fields, _ := db.GetTableColumns(connString, dbName, schema, tableName)
+	// fields, _ := db.GetTableColumns(connString, dbName, schema, tableName)
 
 	cols := "*"
 	if len(columns) > 0 {
 		cols = strings.Join(columns, ",")
-		fields = columns
+		// fields = columns
 	}
 
 	whereConditions, err := headGetWhereCondition(filters)
@@ -57,12 +57,12 @@ func headTable(
 	}
 	query := fmt.Sprintf(`
 		SELECT %s
-		FROM %s.%s
+		FROM %s
 		WHERE true %s
 		LIMIT 10
-		`, cols, schema, tableName, whereConditions)
+		`, cols, tableName, whereConditions)
 
-	items, err := db.Query(connString, dbName, query)
+	fields, items, err := db.Query(connString, dbName, schema, query)
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)

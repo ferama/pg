@@ -37,7 +37,10 @@ func listConnections() {
 
 func listDatabases(connString string) {
 	query := `
-		SELECT d.datname, r.rolname, numbackends
+		SELECT 
+			d.datname as database, 
+			r.rolname as owner, 
+			numbackends as "active connections"
 		FROM pg_database d
 		LEFT JOIN pg_roles r 
 			ON (d.datdba = r.oid)
@@ -47,49 +50,53 @@ func listDatabases(connString string) {
 		ORDER BY d.datname
 	`
 
-	items, err := db.Query(connString, "", query)
+	fields, items, err := db.Query(connString, "", "", query)
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
 	}
-	db.PrintQueryResults(items, []string{"Database", "Owner", "Active Connections"})
+	db.PrintQueryResults(items, fields)
 }
 
 func listSchemas(connString string, dbName string) {
 	query := `
-		SELECT schema_name 
+		SELECT schema_name as schema
 		FROM information_schema.schemata
 		ORDER BY schema_name
 	`
-	items, err := db.Query(connString, dbName, query)
+	fields, items, err := db.Query(connString, dbName, "", query)
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
 	}
-	db.PrintQueryResults(items, []string{"Schema"})
+	db.PrintQueryResults(items, fields)
 }
 
 func listTables(connString string, dbName string, schema string) {
 	query := fmt.Sprintf(`
-		SELECT table_name 
+		SELECT table_name as table
 		FROM information_schema.tables
 		WHERE table_schema = '%s' 
 		ORDER BY table_name
 		`, schema)
 
-	items, err := db.Query(connString, dbName, query)
+	fields, items, err := db.Query(connString, dbName, "", query)
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
 	}
-	db.PrintQueryResults(items, []string{"Table"})
+	db.PrintQueryResults(items, fields)
 }
 
 func listColumns(connString, dbName, schema, tableName string) {
 	query := fmt.Sprintf(`
 		SELECT 
-			c.column_name, c.data_type, c.is_nullable,
-			c.numeric_precision, c.character_maximum_length, constraint_type
+			c.column_name as column, 
+			c.data_type as "data type", 
+			c.is_nullable as nullable,
+			c.numeric_precision, 
+			c.character_maximum_length as "max length", 
+			constraint_type as key
 		FROM information_schema.table_constraints tc 
 		JOIN information_schema.constraint_column_usage AS ccu 
 			USING (constraint_schema, constraint_name) 
@@ -101,13 +108,12 @@ func listColumns(connString, dbName, schema, tableName string) {
 		ORDER BY c.column_name
 		`, schema, tableName)
 
-	items, err := db.Query(connString, dbName, query)
+	fields, items, err := db.Query(connString, dbName, "", query)
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
 	}
-	db.PrintQueryResults(items, []string{
-		"Column", "Data Type", "Nullable", "Numeric Precision", "Max Length", "Key"})
+	db.PrintQueryResults(items, fields)
 }
 
 var lsCmd = &cobra.Command{

@@ -8,6 +8,10 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+type FieldNames []string
+
+type QueryResults [][]string
+
 func castType(item any) string {
 	value := item
 
@@ -19,21 +23,32 @@ func castType(item any) string {
 	return fmt.Sprint(value)
 }
 
-func Query(connString, dbName, query string) ([][]string, error) {
+func Query(connString, dbName, schema, query string) (FieldNames, QueryResults, error) {
 	conn, err := pool.GetPoolFromConf(connString, dbName)
 	if err != nil {
-		return nil, fmt.Errorf("unable to connect to database: %v", err)
+		return nil, nil, fmt.Errorf("unable to connect to database: %v", err)
 	}
 	defer conn.Close()
 
+	if schema != "" {
+		_, err := conn.Exec(context.Background(), fmt.Sprintf("set search_path to %s", schema))
+		if err != nil {
+			return nil, nil, fmt.Errorf("failed to select schema: %v", err)
+		}
+	}
 	rows, err := conn.Query(context.Background(), query)
 	if err != nil {
-		return nil, fmt.Errorf("queryRow failed: %v", err)
+		return nil, nil, fmt.Errorf("queryRow failed: %v", err)
 	}
 	defer rows.Close()
 
-	var out [][]string
-	out = make([][]string, 0)
+	var out QueryResults
+	out = make(QueryResults, 0)
+
+	fields := make(FieldNames, 0)
+	for _, f := range rows.FieldDescriptions() {
+		fields = append(fields, f.Name)
+	}
 
 	for rows.Next() {
 		res, _ := rows.Values()
@@ -49,5 +64,5 @@ func Query(connString, dbName, query string) ([][]string, error) {
 		}
 		out = append(out, row)
 	}
-	return out, nil
+	return fields, out, nil
 }

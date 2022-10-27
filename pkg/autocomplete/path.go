@@ -54,7 +54,7 @@ func Path(level int) func(cmd *cobra.Command, args []string, toComplete string) 
 				WHERE table_schema = '%s' 
 				ORDER BY table_name
 				`, path.SchemaName)
-			items, err := db.Query(path.ConfigConnection, path.DatabaseName, query)
+			_, items, err := db.Query(path.ConfigConnection, path.DatabaseName, "", query)
 			if err != nil {
 				return nil, shellDirective
 			}
@@ -71,7 +71,7 @@ func Path(level int) func(cmd *cobra.Command, args []string, toComplete string) 
 				FROM information_schema.schemata
 				ORDER BY schema_name
 			`
-			items, err := db.Query(path.ConfigConnection, path.DatabaseName, query)
+			_, items, err := db.Query(path.ConfigConnection, path.DatabaseName, "", query)
 			if err != nil {
 				return nil, shellDirective
 			}
@@ -89,7 +89,7 @@ func Path(level int) func(cmd *cobra.Command, args []string, toComplete string) 
 				WHERE d.datistemplate = false
 				ORDER BY d.datname
 				`
-			items, err := db.Query(path.ConfigConnection, "", query)
+			_, items, err := db.Query(path.ConfigConnection, "", "", query)
 			if err != nil {
 				return nil, shellDirective
 			}
