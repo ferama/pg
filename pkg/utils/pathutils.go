@@ -9,9 +9,9 @@ type PathParts struct {
 	TableName        string
 }
 
-func ParsePath(path string) *PathParts {
+func ParsePath(path string, requireTrailingSlash bool) *PathParts {
 	parts := strings.Split(path, "/")
-	if !strings.HasSuffix(path, "/") {
+	if requireTrailingSlash && !strings.HasSuffix(path, "/") {
 		parts = parts[:len(parts)-1]
 	}
 	pp := &PathParts{}

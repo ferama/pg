@@ -95,7 +95,7 @@ var headCmd = &cobra.Command{
 		columns, _ := cmd.Flags().GetStringSlice("columns")
 		filters, _ := cmd.Flags().GetStringSlice("filters")
 
-		path := utils.ParsePath(strings.Join(args, " "))
+		path := utils.ParsePath(strings.Join(args, " "), false)
 
 		if path.TableName != "" {
 			headTable(

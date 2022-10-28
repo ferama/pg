@@ -33,7 +33,7 @@ func Path(level int) func(cmd *cobra.Command, args []string, toComplete string) 
 			basePath = strings.Join(parts[:len(parts)-1], "/")
 		}
 
-		path := utils.ParsePath(toComplete)
+		path := utils.ParsePath(toComplete, true)
 
 		if len(parts)-1 >= level {
 			return nil, shellDirective

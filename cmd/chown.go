@@ -19,7 +19,7 @@ var chownCmd = &cobra.Command{
 	Args:  cobra.MinimumNArgs(2),
 	Short: "Set database owner",
 	Run: func(cmd *cobra.Command, args []string) {
-		path := utils.ParsePath(args[0])
+		path := utils.ParsePath(args[0], false)
 		if path.DatabaseName != "" {
 			owner := args[1]
 			query := fmt.Sprintf(`

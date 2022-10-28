@@ -80,7 +80,7 @@ var statsCmd = &cobra.Command{
 	Short:             "Show basic stats",
 	ValidArgsFunction: autocomplete.Path(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		path := utils.ParsePath(args[0])
+		path := utils.ParsePath(args[0], false)
 		if path.ConfigConnection != "" {
 			statsPrint(path.ConfigConnection)
 		}

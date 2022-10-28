@@ -4,7 +4,7 @@ import "testing"
 
 func TestPathParser(t *testing.T) {
 	path := "conn/dbname/schemaname/tabname"
-	parts := ParsePath(path)
+	parts := ParsePath(path, false)
 
 	if parts.ConfigConnection != "conn" {
 		t.Fail()

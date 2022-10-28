@@ -30,7 +30,7 @@ var sqlCmd = &cobra.Command{
 	Short:             "Run sql query",
 	ValidArgsFunction: autocomplete.Path(3),
 	Run: func(cmd *cobra.Command, args []string) {
-		path := utils.ParsePath(strings.Join(args, " "))
+		path := utils.ParsePath(strings.Join(args, " "), false)
 
 		if path.SchemaName != "" {
 			sqlExecute(

@@ -130,7 +130,7 @@ var lsCmd = &cobra.Command{
 			return
 		}
 
-		path := utils.ParsePath(strings.Join(args, " "))
+		path := utils.ParsePath(strings.Join(args, " "), false)
 
 		if path.TableName != "" {
 			listColumns(
