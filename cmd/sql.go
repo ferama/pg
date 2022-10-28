@@ -3,7 +3,6 @@ package cmd
 import (
 	"fmt"
 	"os"
-	"strings"
 
 	"github.com/ferama/pg/pkg/autocomplete"
 	"github.com/ferama/pg/pkg/db"
@@ -30,7 +29,7 @@ var sqlCmd = &cobra.Command{
 	Short:             "Run sql query",
 	ValidArgsFunction: autocomplete.Path(3),
 	Run: func(cmd *cobra.Command, args []string) {
-		path := utils.ParsePath(strings.Join(args, " "), false)
+		path := utils.ParsePath(args[0], false)
 
 		if path.SchemaName != "" {
 			sqlExecute(

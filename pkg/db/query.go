@@ -36,6 +36,7 @@ func Query(connString, dbName, schema, query string) (FieldNames, QueryResults, 
 			return nil, nil, fmt.Errorf("failed to select schema: %v", err)
 		}
 	}
+
 	rows, err := conn.Query(context.Background(), query)
 	if err != nil {
 		return nil, nil, fmt.Errorf("queryRow failed: %v", err)

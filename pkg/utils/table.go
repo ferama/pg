@@ -12,8 +12,8 @@ func GetTableWriter() table.Writer {
 	t := table.NewWriter()
 
 	colors := table.ColorOptions{
-		IndexColumn:  text.Colors{text.FgHiBlue, text.BgHiBlack},
-		Footer:       text.Colors{text.FgBlue, text.BgHiBlack},
+		IndexColumn:  text.Colors{text.FgHiWhite, text.BgBlack},
+		Footer:       text.Colors{text.FgBlack, text.BgWhite},
 		Header:       text.Colors{text.BgHiBlue, text.FgBlack},
 		Row:          text.Colors{text.FgHiWhite, text.BgBlack},
 		RowAlternate: text.Colors{text.FgWhite, text.BgBlack},

@@ -3,7 +3,6 @@ package cmd
 import (
 	"fmt"
 	"os"
-	"strings"
 
 	"github.com/ferama/pg/pkg/autocomplete"
 	"github.com/ferama/pg/pkg/conf"
@@ -130,7 +129,7 @@ var lsCmd = &cobra.Command{
 			return
 		}
 
-		path := utils.ParsePath(strings.Join(args, " "), false)
+		path := utils.ParsePath(args[0], false)
 
 		if path.TableName != "" {
 			listColumns(

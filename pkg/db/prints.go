@@ -14,6 +14,7 @@ func PrintQueryResults(items [][]string, fields []string) {
 		t.Render()
 		fmt.Println()
 	}()
+
 	var tr table.Row
 	for _, f := range fields {
 		tr = append(tr, f)
