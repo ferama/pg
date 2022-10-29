@@ -85,6 +85,20 @@ func listTables(connString string, dbName string, schema string) {
 		os.Exit(1)
 	}
 	db.PrintQueryResults(items, fields)
+
+	query = fmt.Sprintf(`
+		SELECT sequence_name as sequence
+		FROM information_schema.sequences
+		WHERE sequence_schema = '%s' 
+		ORDER BY sequence_name
+		`, schema)
+
+	fields, items, err = db.Query(connString, dbName, "", query)
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+	db.PrintQueryResults(items, fields)
 }
 
 func listColumns(connString, dbName, schema, tableName string) {
@@ -109,6 +123,20 @@ func listColumns(connString, dbName, schema, tableName string) {
 		`, schema, tableName)
 
 	fields, items, err := db.Query(connString, dbName, "", query)
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+	db.PrintQueryResults(items, fields)
+
+	query = fmt.Sprintf(`
+		SELECT indexname as index, indexdef as def
+		FROM pg_indexes
+		WHERE tablename = '%s'
+		ORDER BY indexname
+		`, tableName)
+
+	fields, items, err = db.Query(connString, dbName, "", query)
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)

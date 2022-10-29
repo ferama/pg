@@ -12,7 +12,14 @@ import (
 )
 
 func headGetWhereCondition(filters []string) (string, error) {
-	validSplits := []string{"=", "!=", ">", "<", "<=", ">="}
+	validSplits := []string{
+		"=",
+		"!=",
+		">",
+		"<",
+		"<=",
+		">=",
+	}
 
 	where := ""
 	if len(filters) > 0 {
@@ -20,6 +27,7 @@ func headGetWhereCondition(filters []string) (string, error) {
 		for _, f := range filters {
 			t := ""
 			for _, vs := range validSplits {
+				f = strings.ToLower(f)
 				parts := strings.Split(f, vs)
 				if len(parts) != 2 {
 					continue
@@ -42,12 +50,9 @@ func headTable(
 	columns, filters []string,
 ) {
 
-	// fields, _ := db.GetTableColumns(connString, dbName, schema, tableName)
-
 	cols := "*"
 	if len(columns) > 0 {
 		cols = strings.Join(columns, ",")
-		// fields = columns
 	}
 
 	whereConditions, err := headGetWhereCondition(filters)
