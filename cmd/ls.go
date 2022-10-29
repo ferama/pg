@@ -101,7 +101,8 @@ func listTables(connString string, dbName string, schema string) {
 	db.PrintQueryResults(items, fields)
 }
 
-func listColumns(connString, dbName, schema, tableName string) {
+func listTableDetails(connString, dbName, schema, tableName string) {
+	// Columns
 	query := fmt.Sprintf(`
 		SELECT 
 			c.column_name as column, 
@@ -129,12 +130,36 @@ func listColumns(connString, dbName, schema, tableName string) {
 	}
 	db.PrintQueryResults(items, fields)
 
+	// Indexes
 	query = fmt.Sprintf(`
 		SELECT indexname as index, indexdef as def
 		FROM pg_indexes
 		WHERE tablename = '%s'
 		ORDER BY indexname
 		`, tableName)
+
+	fields, items, err = db.Query(connString, dbName, "", query)
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+	db.PrintQueryResults(items, fields)
+
+	query = fmt.Sprintf(`
+		SELECT
+			conname as "constraint name",
+			pg_get_constraintdef(c.oid, true) as definition
+		FROM
+			pg_constraint c
+		JOIN
+			pg_namespace n ON n.oid = c.connamespace
+		JOIN
+			pg_class cl ON cl.oid = c.conrelid
+		WHERE
+			n.nspname = '%s' AND
+			relname = '%s'
+		ORDER BY
+			contype desc`, schema, tableName)
 
 	fields, items, err = db.Query(connString, dbName, "", query)
 	if err != nil {
@@ -160,7 +185,7 @@ var lsCmd = &cobra.Command{
 		path := utils.ParsePath(args[0], false)
 
 		if path.TableName != "" {
-			listColumns(
+			listTableDetails(
 				path.ConfigConnection,
 				path.DatabaseName,
 				path.SchemaName,
