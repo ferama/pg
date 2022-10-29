@@ -73,7 +73,7 @@ func listSchemas(connString string, dbName string) {
 
 func listTables(connString string, dbName string, schema string) {
 	query := fmt.Sprintf(`
-		SELECT table_name as table
+		SELECT table_name as table, table_type as type
 		FROM information_schema.tables
 		WHERE table_schema = '%s' 
 		ORDER BY table_name
