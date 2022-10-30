@@ -32,32 +32,32 @@ type model struct {
 	err      error
 }
 
-func newModel() model {
+func newModel() *model {
 	ti := textarea.New()
-	ti.Placeholder = "SELECT..."
+	ti.Placeholder = "select ..."
 	ti.SetWidth(60)
+	ti.SetHeight(12)
 	ti.Focus()
 
-	return model{
+	return &model{
 		textarea: ti,
 		err:      nil,
 	}
 }
-func (m model) Init() tea.Cmd {
+func (m *model) Init() tea.Cmd {
 	return textarea.Blink
 }
 
-func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmds []tea.Cmd
 	var cmd tea.Cmd
-
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.Type {
-		case tea.KeyCtrlC, tea.KeyEsc:
+		case tea.KeyEsc:
 			m.textarea.Reset()
 			return m, tea.Quit
-		case tea.KeyCtrlR:
+		case tea.KeyCtrlX:
 			return m, tea.Quit
 		default:
 			if !m.textarea.Focused() {
@@ -77,11 +77,11 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, tea.Batch(cmds...)
 }
 
-func (m model) View() string {
+func (m *model) View() string {
 	return fmt.Sprintf(
 		"\n%s\n\n%s",
 		m.textarea.View(),
-		"(ctrl+r to run. ESC to cancel)",
+		"(ctrl+x to execute. ESC to cancel)",
 	) + "\n\n"
 }
 
@@ -93,7 +93,7 @@ var sqlCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		path := utils.ParsePath(args[0], false)
 
-		if path.SchemaName != "" {
+		if path.SchemaName != "" || path.DatabaseName != "" {
 			model := newModel()
 			p := tea.NewProgram(model)
 
@@ -110,7 +110,7 @@ var sqlCmd = &cobra.Command{
 				)
 			}
 		} else {
-			fmt.Fprintf(os.Stderr, "schema '%s' not found", path.SchemaName)
+			fmt.Fprintf(os.Stderr, "database and schema not provided")
 			os.Exit(1)
 		}
 	},
