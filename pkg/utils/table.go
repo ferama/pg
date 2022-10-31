@@ -1,8 +1,6 @@
 package utils
 
 import (
-	"os"
-
 	"github.com/jedib0t/go-pretty/v6/table"
 	"github.com/jedib0t/go-pretty/v6/text"
 	"github.com/spf13/viper"
@@ -39,6 +37,6 @@ func GetTableWriter() table.Writer {
 	} else {
 		t.SetStyle(table.StyleRounded)
 	}
-	t.SetOutputMirror(os.Stdout)
+	// t.SetOutputMirror(os.Stdout)
 	return t
 }

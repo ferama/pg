@@ -8,12 +8,12 @@ import (
 )
 
 func PrintQueryResults(items [][]string, fields []string) {
+	res := RenderQueryResults(items, fields)
+	fmt.Printf("\n%s\n\n", res)
+}
+
+func RenderQueryResults(items [][]string, fields []string) string {
 	t := utils.GetTableWriter()
-	defer func() {
-		fmt.Println()
-		t.Render()
-		fmt.Println()
-	}()
 
 	var tr table.Row
 	for _, f := range fields {
@@ -28,4 +28,6 @@ func PrintQueryResults(items [][]string, fields []string) {
 		}
 		t.AppendRow(tr)
 	}
+
+	return t.Render()
 }

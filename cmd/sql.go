@@ -109,6 +109,7 @@ var sqlCmd = &cobra.Command{
 					query,
 				)
 			}
+
 		} else {
 			fmt.Fprintf(os.Stderr, "database and schema not provided")
 			os.Exit(1)
