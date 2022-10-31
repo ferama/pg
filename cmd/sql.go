@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strings"
 
 	"github.com/ferama/pg/pkg/autocomplete"
 	"github.com/ferama/pg/pkg/db"
@@ -13,9 +14,20 @@ import (
 	"github.com/charmbracelet/bubbles/textarea"
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 )
 
-const textareaHeight = 6
+const (
+	sqlTextareaHeight = 6
+)
+
+var (
+	resultsModelStyle = lipgloss.NewStyle().
+				Border(lipgloss.ThickBorder(), true, true, false, true).
+				BorderForeground(lipgloss.Color("#ffffff"))
+
+	infoStyle = lipgloss.NewStyle()
+)
 
 func init() {
 	rootCmd.AddCommand(sqlCmd)
@@ -31,25 +43,26 @@ func sqlExecute(connString, dbName, schema, query string) (string, error) {
 }
 
 type model struct {
-	path     *utils.PathParts
-	viewport viewport.Model
-	textarea textarea.Model
-	err      error
+	path        *utils.PathParts
+	resultsView viewport.Model
+	textarea    textarea.Model
+	err         error
 }
 
 func newModel(path *utils.PathParts) *model {
 	ti := textarea.New()
-	vp := viewport.New(20, 10)
 	ti.Placeholder = "select ..."
 	ti.SetWidth(10)
-	ti.SetHeight(textareaHeight)
+	ti.SetHeight(sqlTextareaHeight)
 	ti.Focus()
 
+	vp := viewport.New(20, 10)
+
 	return &model{
-		path:     path,
-		viewport: vp,
-		textarea: ti,
-		err:      nil,
+		path:        path,
+		resultsView: vp,
+		textarea:    ti,
+		err:         nil,
 	}
 }
 func (m *model) Init() tea.Cmd {
@@ -62,15 +75,21 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
 		m.textarea.SetWidth(msg.Width)
-		m.viewport.Width = msg.Width
-		m.viewport.Height = msg.Height - (textareaHeight + 2)
+		resultsModelStyle.Width(msg.Width - 2)
+		resultsModelStyle.Height(msg.Height - (sqlTextareaHeight + 3))
+		m.resultsView.Width = msg.Width - 2
+		m.resultsView.Height = msg.Height - (sqlTextareaHeight + 3)
 	case tea.KeyMsg:
 		switch msg.Type {
 		case tea.KeyEsc:
 			m.textarea.Reset()
 			return m, tea.Quit
+		case tea.KeyCtrlDown, tea.KeyCtrlD:
+			m.resultsView.HalfViewDown()
+		case tea.KeyCtrlUp, tea.KeyCtrlU:
+			m.resultsView.HalfViewUp()
 		case tea.KeyCtrlX:
-			m.viewport.SetContent("running query...")
+			m.resultsView.SetContent("running query...")
 			go func() {
 				query := m.textarea.Value()
 				res, err := sqlExecute(
@@ -80,9 +99,9 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					query,
 				)
 				if err != nil {
-					m.viewport.SetContent(err.Error())
+					m.resultsView.SetContent(err.Error())
 				} else {
-					m.viewport.SetContent(res)
+					m.resultsView.SetContent(res)
 				}
 			}()
 		default:
@@ -104,11 +123,17 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m *model) View() string {
+	renderedResults := resultsModelStyle.Render(m.resultsView.View())
+	percent := fmt.Sprintf("%3.f%%", m.resultsView.ScrollPercent()*100)
+	line := strings.Repeat("━", m.resultsView.Width-4)
+	line = fmt.Sprintf("┗%s%s┛", line, infoStyle.Render(percent))
+	out := lipgloss.JoinVertical(lipgloss.Center, renderedResults, line)
 	return fmt.Sprintf(
-		"%s\n%s\n\n%s",
-		m.viewport.View(),
+		"%s\n%s\n%s",
+		// renderedResults,
+		out,
 		m.textarea.View(),
-		"(ctrl+x to execute. ESC to cancel)",
+		"     |ctrl+x| execute |ESC| cancel |ctrl+down| scroll down |ctrl+up| scroll up",
 	)
 }
 
