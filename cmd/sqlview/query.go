@@ -14,20 +14,21 @@ const (
 
 type QueryView struct {
 	path     *utils.PathParts
-	Textarea textarea.Model
+	textarea textarea.Model
 	err      error
 }
 
 func NewQueryView(path *utils.PathParts) *QueryView {
 	ti := textarea.New()
 	ti.Placeholder = "select ..."
+	ti.Prompt = ""
 	ti.SetWidth(10)
 	ti.SetHeight(SqlTextareaHeight)
 	ti.Focus()
 
 	return &QueryView{
 		path:     path,
-		Textarea: ti,
+		textarea: ti,
 		err:      nil,
 	}
 }
@@ -41,22 +42,18 @@ func (m *QueryView) Update(msg tea.Msg) (*QueryView, tea.Cmd) {
 
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
-		m.Textarea.SetWidth(msg.Width)
+		m.textarea.SetWidth(msg.Width)
 	// We handle errors just like any other message
 	case error:
 		m.err = msg
 		return m, nil
 	}
 
-	m.Textarea, cmd = m.Textarea.Update(msg)
+	m.textarea, cmd = m.textarea.Update(msg)
 	cmds = append(cmds, cmd)
 	return m, tea.Batch(cmds...)
 }
 
 func (m *QueryView) View() string {
-	return fmt.Sprintf(
-		"%s\n%s",
-		m.Textarea.View(),
-		"     |ctrl+x| execute |ESC| cancel |ctrl+down| scroll down |ctrl+up| scroll up",
-	)
+	return fmt.Sprint(m.textarea.View())
 }

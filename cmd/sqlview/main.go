@@ -28,8 +28,8 @@ func NewMainView(path *utils.PathParts) *MainView {
 }
 
 func (m *MainView) Init() tea.Cmd {
-	// m.queryView.Textarea.SetValue("select * from sales limit 10")
-	return m.queryView.Init()
+	m.queryView.textarea.SetValue("select * from sales limit 100")
+	return tea.Batch(m.queryView.Init(), m.queryView.textarea.Focus())
 }
 
 func (m *MainView) sqlExecute(connString, dbName, schema, query string) (string, error) {
@@ -68,22 +68,17 @@ func (m *MainView) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case tea.KeyEsc:
 			return m, tea.Quit
 		case tea.KeyCtrlDown, tea.KeyCtrlD:
-			m.resultsView.Viewport.HalfViewDown()
+			m.resultsView.viewport.HalfViewDown()
 		case tea.KeyCtrlUp, tea.KeyCtrlU:
-			m.resultsView.Viewport.HalfViewUp()
+			m.resultsView.viewport.HalfViewUp()
 		case tea.KeyCtrlX:
-			m.resultsView.Viewport.SetContent("running query...")
+			m.resultsView.viewport.SetContent("running query...")
 
-			query := m.queryView.Textarea.Value()
+			query := m.queryView.textarea.Value()
 			go func() {
 				response := m.doQuery(query)
-				m.resultsView.Viewport.SetContent(response)
+				m.resultsView.viewport.SetContent(response)
 			}()
-		default:
-			if !m.queryView.Textarea.Focused() {
-				cmd := m.queryView.Textarea.Focus()
-				cmds = append(cmds, cmd)
-			}
 		}
 	// We handle errors just like any other message
 	case error:
@@ -102,8 +97,9 @@ func (m *MainView) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (m *MainView) View() string {
 	return fmt.Sprintf(
-		"%s%s",
+		"%s%s\n%s",
 		m.resultsView.View(),
 		m.queryView.View(),
+		"|ctrl+x| execute |ESC| exit",
 	)
 }

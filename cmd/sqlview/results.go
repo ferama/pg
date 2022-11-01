@@ -9,28 +9,42 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
+const (
+	color = "#66ccff"
+)
+
 var (
 	resultsModelStyle = lipgloss.NewStyle().
 				Border(lipgloss.ThickBorder(), true, true, false, true).
-				BorderForeground(lipgloss.Color("#ffffff"))
+				BorderForeground(lipgloss.Color(color))
 
-	infoStyle = lipgloss.NewStyle()
+	textStyle = lipgloss.NewStyle().Foreground(lipgloss.Color(color))
 )
 
 type ResultsView struct {
-	Viewport viewport.Model
-	err      error
+	viewport       viewport.Model
+	err            error
+	terminalHeight int
+	terminalWidth  int
 }
 
 func NewResultsView() *ResultsView {
 	vp := viewport.New(5, 5)
 	return &ResultsView{
-		Viewport: vp,
+		viewport: vp,
 	}
 }
 
 func (m *ResultsView) Init() tea.Cmd {
 	return nil
+}
+
+func (m *ResultsView) setDimensions() {
+	resultsModelStyle.Width(m.terminalWidth - 2)
+	resultsModelStyle.Height(m.terminalHeight - (SqlTextareaHeight + 3))
+
+	m.viewport.Width = m.terminalWidth - 2
+	m.viewport.Height = m.terminalHeight - (SqlTextareaHeight + 3)
 }
 
 func (m *ResultsView) Update(msg tea.Msg) (*ResultsView, tea.Cmd) {
@@ -39,26 +53,30 @@ func (m *ResultsView) Update(msg tea.Msg) (*ResultsView, tea.Cmd) {
 
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
-		resultsModelStyle.Width(msg.Width - 2)
-		resultsModelStyle.Height(msg.Height - (SqlTextareaHeight + 3))
-		m.Viewport.Width = msg.Width - 2
-		m.Viewport.Height = msg.Height - (SqlTextareaHeight + 3)
+		m.terminalHeight = msg.Height
+		m.terminalWidth = msg.Width
+		m.setDimensions()
 	// We handle errors just like any other message
 	case error:
 		m.err = msg
 		return m, nil
 	}
 
-	m.Viewport, cmd = m.Viewport.Update(msg)
+	m.viewport, cmd = m.viewport.Update(msg)
 	cmds = append(cmds, cmd)
 	return m, tea.Batch(cmds...)
 }
 
 func (m *ResultsView) View() string {
-	renderedResults := resultsModelStyle.Render(m.Viewport.View())
-	percent := fmt.Sprintf("%3.f%%", m.Viewport.ScrollPercent()*100)
-	line := strings.Repeat("━", m.Viewport.Width-4)
-	line = fmt.Sprintf("┗%s%s┛", line, infoStyle.Render(percent))
+	var renderedResults string
+
+	percent := fmt.Sprintf("%3.f%%", m.viewport.ScrollPercent()*100)
+	line := strings.Repeat("━", m.viewport.Width-4)
+	line = fmt.Sprintf("┗%s%s┛", line, percent)
+
+	renderedResults = resultsModelStyle.Render(m.viewport.View())
+	line = textStyle.Render(line)
+
 	out := lipgloss.JoinVertical(lipgloss.Center, renderedResults, line)
 	return fmt.Sprintf(
 		"%s\n",
