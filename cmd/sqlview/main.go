@@ -28,7 +28,8 @@ func NewMainView(path *utils.PathParts) *MainView {
 }
 
 func (m *MainView) Init() tea.Cmd {
-	return nil
+	// m.queryView.Textarea.SetValue("select * from sales limit 10")
+	return m.queryView.Init()
 }
 
 func (m *MainView) sqlExecute(connString, dbName, schema, query string) (string, error) {
@@ -41,6 +42,20 @@ func (m *MainView) sqlExecute(connString, dbName, schema, query string) (string,
 		return "", err
 	}
 	return db.RenderQueryResults(items, fields), nil
+}
+
+func (m *MainView) doQuery(query string) string {
+	res, err := m.sqlExecute(
+		m.path.ConfigConnection,
+		m.path.DatabaseName,
+		m.path.SchemaName,
+		query,
+	)
+	if err != nil {
+		return err.Error()
+	} else {
+		return res
+	}
 }
 
 func (m *MainView) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -58,19 +73,11 @@ func (m *MainView) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.resultsView.Viewport.HalfViewUp()
 		case tea.KeyCtrlX:
 			m.resultsView.Viewport.SetContent("running query...")
+
+			query := m.queryView.Textarea.Value()
 			go func() {
-				query := m.queryView.Textarea.Value()
-				res, err := m.sqlExecute(
-					m.path.ConfigConnection,
-					m.path.DatabaseName,
-					m.path.SchemaName,
-					query,
-				)
-				if err != nil {
-					m.resultsView.Viewport.SetContent(err.Error())
-				} else {
-					m.resultsView.Viewport.SetContent(res)
-				}
+				response := m.doQuery(query)
+				m.resultsView.Viewport.SetContent(response)
 			}()
 		default:
 			if !m.queryView.Textarea.Focused() {
