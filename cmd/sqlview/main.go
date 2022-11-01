@@ -28,7 +28,7 @@ func NewMainView(path *utils.PathParts) *MainView {
 }
 
 func (m *MainView) Init() tea.Cmd {
-	m.queryView.textarea.SetValue("select * from sales limit 100")
+	// m.queryView.textarea.SetValue("select * from sales limit 100")
 	return tea.Batch(m.queryView.Init(), m.queryView.textarea.Focus())
 }
 

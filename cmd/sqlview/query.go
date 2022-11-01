@@ -9,7 +9,7 @@ import (
 )
 
 const (
-	SqlTextareaHeight = 6
+	SqlTextareaHeight = 5
 )
 
 type QueryView struct {
