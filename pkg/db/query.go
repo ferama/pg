@@ -2,6 +2,7 @@ package db
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/ferama/pg/pkg/pool"
@@ -24,6 +25,9 @@ func castType(item any) string {
 }
 
 func Query(connString, dbName, schema, query string) (FieldNames, QueryResults, error) {
+	if query == "" {
+		return nil, nil, errors.New("query is empty")
+	}
 	conn, err := pool.GetPoolFromConf(connString, dbName)
 	if err != nil {
 		return nil, nil, fmt.Errorf("unable to connect to database: %v", err)
@@ -39,7 +43,8 @@ func Query(connString, dbName, schema, query string) (FieldNames, QueryResults, 
 
 	rows, err := conn.Query(context.Background(), query)
 	if err != nil {
-		return nil, nil, fmt.Errorf("queryRow failed: %v", err)
+		// return nil, nil, fmt.Errorf("queryRow2 failed: %s", err.Error())
+		return nil, nil, err
 	}
 	defer rows.Close()
 
