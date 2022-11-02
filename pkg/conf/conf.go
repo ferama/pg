@@ -7,6 +7,12 @@ import (
 	"github.com/spf13/viper"
 )
 
+const (
+	SqlTextareaHeight = 5
+	ColorBlur         = "#ffffff"
+	ColorFocus        = "#66ccff"
+)
+
 func GetAvailableConnections() []string {
 	var conf Conf
 

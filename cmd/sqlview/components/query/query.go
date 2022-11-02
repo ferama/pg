@@ -1,15 +1,19 @@
 package query
 
 import (
-	"fmt"
-
 	"github.com/charmbracelet/bubbles/textarea"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
+	"github.com/ferama/pg/pkg/conf"
 	"github.com/ferama/pg/pkg/utils"
 )
 
-const (
-	sqlTextareaHeight = 5
+var (
+	style = lipgloss.NewStyle().
+		Foreground(lipgloss.Color(conf.ColorBlur))
+
+	focusedStyle = style.Copy().
+			Foreground(lipgloss.Color(conf.ColorFocus))
 )
 
 type QueryView struct {
@@ -19,21 +23,38 @@ type QueryView struct {
 }
 
 func NewQueryView(path *utils.PathParts) *QueryView {
-	ti := textarea.New()
-	ti.Placeholder = "select ..."
-	ti.Prompt = ""
-	ti.SetWidth(10)
-	ti.SetHeight(sqlTextareaHeight)
-	ti.Focus()
+	ta := textarea.New()
+	ta.Placeholder = "select ..."
+
+	ta.Prompt = lipgloss.ThickBorder().Left + " "
+
+	ta.BlurredStyle = textarea.Style{
+		Prompt: style,
+	}
+	ta.FocusedStyle = textarea.Style{
+		Prompt: focusedStyle,
+	}
+
+	ta.SetWidth(10)
+	ta.SetHeight(conf.SqlTextareaHeight)
+	ta.Focus()
 
 	return &QueryView{
 		path:     path,
-		textarea: ti,
+		textarea: ta,
 		err:      nil,
 	}
 }
 func (m *QueryView) Focus() tea.Cmd {
 	return m.textarea.Focus()
+}
+
+func (m *QueryView) Blur() {
+	m.textarea.Blur()
+}
+
+func (m *QueryView) SetValue(value string) {
+	m.textarea.SetValue(value)
 }
 
 func (m *QueryView) Value() string {
@@ -62,5 +83,5 @@ func (m *QueryView) Update(msg tea.Msg) (*QueryView, tea.Cmd) {
 }
 
 func (m *QueryView) View() string {
-	return fmt.Sprint(m.textarea.View())
+	return m.textarea.View()
 }

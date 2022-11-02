@@ -7,20 +7,22 @@ import (
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/ferama/pg/pkg/conf"
 	"github.com/ferama/pg/pkg/db"
-)
-
-const (
-	color             = "#66ccff"
-	sqlTextareaHeight = 5
+	"github.com/ferama/pg/pkg/stripansi"
 )
 
 var (
-	resultsModelStyle = lipgloss.NewStyle().
-				Border(lipgloss.ThickBorder(), true, true, false, true).
-				BorderForeground(lipgloss.Color(color))
+	style = lipgloss.NewStyle().
+		Border(lipgloss.NormalBorder(), true, true, false, true).
+		BorderForeground(lipgloss.Color(conf.ColorBlur))
 
-	resultsTextStyle = lipgloss.NewStyle().Foreground(lipgloss.Color(color))
+	focusedStyle = lipgloss.NewStyle().
+			Border(lipgloss.ThickBorder(), true, true, false, true).
+			BorderForeground(lipgloss.Color(conf.ColorFocus))
+
+	textStyle        = lipgloss.NewStyle().Foreground(lipgloss.Color(conf.ColorBlur))
+	textFocusedStyle = lipgloss.NewStyle().Foreground(lipgloss.Color(conf.ColorFocus))
 )
 
 type ResultsView struct {
@@ -29,6 +31,7 @@ type ResultsView struct {
 	terminalHeight int
 	terminalWidth  int
 	xPosition      int
+	focused        bool
 
 	rows   db.ResultsRows
 	fields db.ResultsFields
@@ -37,12 +40,25 @@ type ResultsView struct {
 func NewResultsView() *ResultsView {
 	vp := viewport.New(5, 5)
 	return &ResultsView{
+		focused:  false,
 		viewport: vp,
 	}
 }
 
 func (m *ResultsView) Init() tea.Cmd {
 	return nil
+}
+
+func (m *ResultsView) Focus() {
+	m.focused = true
+}
+
+func (m *ResultsView) Focused() bool {
+	return m.focused
+}
+
+func (m *ResultsView) Blur() {
+	m.focused = false
 }
 
 func (m *ResultsView) SetResults(fields db.ResultsFields, rows db.ResultsRows) {
@@ -65,23 +81,30 @@ func (m *ResultsView) scrollHorizontally(amount int) {
 	if nextPos < 0 || nextPos >= len(m.fields) {
 		return
 	}
-	m.xPosition = nextPos
 
 	rrows := make(db.ResultsRows, 0)
 	for _, r := range m.rows {
-		rrows = append(rrows, r[m.xPosition:])
+		rrows = append(rrows, r[nextPos:])
 	}
 
-	rendered := db.RenderQueryResults(rrows, m.fields[m.xPosition:])
-	m.viewport.SetContent(rendered)
+	rendered := db.RenderQueryResults(rrows, m.fields[nextPos:])
+	line := strings.Split(rendered, "\n")[0]
+	line = stripansi.Strip(line)
+	if len(line) > m.terminalWidth {
+		m.viewport.SetContent(rendered)
+		m.xPosition = nextPos
+	}
 }
 
 func (m *ResultsView) setDimensions() {
-	resultsModelStyle.Width(m.terminalWidth - 2)
-	resultsModelStyle.Height(m.terminalHeight - (sqlTextareaHeight + 3))
+	style.Width(m.terminalWidth - 2)
+	style.Height(m.terminalHeight - (conf.SqlTextareaHeight + 3))
+
+	focusedStyle.Width(m.terminalWidth - 2)
+	focusedStyle.Height(m.terminalHeight - (conf.SqlTextareaHeight + 3))
 
 	m.viewport.Width = m.terminalWidth - 2
-	m.viewport.Height = m.terminalHeight - (sqlTextareaHeight + 3)
+	m.viewport.Height = m.terminalHeight - (conf.SqlTextareaHeight + 3)
 }
 
 func (m *ResultsView) Update(msg tea.Msg) (*ResultsView, tea.Cmd) {
@@ -94,6 +117,9 @@ func (m *ResultsView) Update(msg tea.Msg) (*ResultsView, tea.Cmd) {
 		m.terminalWidth = msg.Width
 		m.setDimensions()
 	case tea.KeyMsg:
+		if !m.focused {
+			break
+		}
 		switch msg.Type {
 		case tea.KeyCtrlDown, tea.KeyCtrlD:
 			m.viewport.HalfViewDown()
@@ -119,11 +145,25 @@ func (m *ResultsView) View() string {
 	var renderedResults string
 
 	percent := fmt.Sprintf("%3.f%%", m.viewport.ScrollPercent()*100)
-	line := strings.Repeat("━", m.viewport.Width-4)
-	line = fmt.Sprintf("┗%s%s┛", line, percent)
 
-	renderedResults = resultsModelStyle.Render(m.viewport.View())
-	line = resultsTextStyle.Render(line)
+	borderStyle := lipgloss.NormalBorder()
+	if m.focused {
+		borderStyle = lipgloss.ThickBorder()
+	}
+	line := strings.Repeat(borderStyle.Bottom, m.viewport.Width-4)
+	line = fmt.Sprintf("%s%s%s%s",
+		borderStyle.BottomLeft,
+		line,
+		percent,
+		borderStyle.BottomRight)
+
+	if m.focused {
+		renderedResults = focusedStyle.Render(m.viewport.View())
+		line = textFocusedStyle.Render(line)
+	} else {
+		renderedResults = style.Render(m.viewport.View())
+		line = textStyle.Render(line)
+	}
 
 	out := lipgloss.JoinVertical(lipgloss.Center, renderedResults, line)
 	return fmt.Sprintf(

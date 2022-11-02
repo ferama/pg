@@ -30,8 +30,8 @@ func NewMainView(path *utils.PathParts) *MainView {
 }
 
 func (m *MainView) Init() tea.Cmd {
-	// m.queryView.textarea.SetValue("select * from pg_replication_slots")
-	// m.queryView.textarea.SetValue("select * from sales limit 100")
+	m.queryView.SetValue("select * from pg_replication_slots")
+	// m.queryView.SetValue("select * from sales limit 100")
 	return tea.Batch(m.queryView.Init(), m.queryView.Focus())
 }
 
@@ -68,7 +68,15 @@ func (m *MainView) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch msg.Type {
 		case tea.KeyEsc:
 			return m, tea.Quit
-
+		case tea.KeyTab:
+			if m.resultsView.Focused() {
+				m.resultsView.Blur()
+				cmd = m.queryView.Focus()
+				cmds = append(cmds, cmd)
+			} else {
+				m.resultsView.Focus()
+				m.queryView.Blur()
+			}
 		case tea.KeyCtrlX:
 			m.resultsView.SetContent("running query...")
 
