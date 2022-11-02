@@ -7,6 +7,7 @@ import (
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/ferama/pg/pkg/db"
 )
 
 const (
@@ -18,7 +19,7 @@ var (
 				Border(lipgloss.ThickBorder(), true, true, false, true).
 				BorderForeground(lipgloss.Color(color))
 
-	textStyle = lipgloss.NewStyle().Foreground(lipgloss.Color(color))
+	resultsTextStyle = lipgloss.NewStyle().Foreground(lipgloss.Color(color))
 )
 
 type resultsView struct {
@@ -26,6 +27,10 @@ type resultsView struct {
 	err            error
 	terminalHeight int
 	terminalWidth  int
+	xPosition      int
+
+	rows   db.ResultsRows
+	fields db.ResultsFields
 }
 
 func newResultsView() *resultsView {
@@ -37,6 +42,37 @@ func newResultsView() *resultsView {
 
 func (m *resultsView) Init() tea.Cmd {
 	return nil
+}
+
+func (m *resultsView) SetResults(fields db.ResultsFields, rows db.ResultsRows) {
+	m.xPosition = 0
+
+	m.rows = rows
+	m.fields = fields
+
+	r := db.RenderQueryResults(rows, fields)
+	m.viewport.SetContent(r)
+}
+
+func (m *resultsView) SetContent(value string) {
+	m.xPosition = 0
+	m.viewport.SetContent(value)
+}
+
+func (m *resultsView) scrollHorizontally(amount int) {
+	nextPos := m.xPosition + amount
+	if nextPos < 0 || nextPos >= len(m.fields) {
+		return
+	}
+	m.xPosition = nextPos
+
+	rrows := make(db.ResultsRows, 0)
+	for _, r := range m.rows {
+		rrows = append(rrows, r[m.xPosition:])
+	}
+
+	rendered := db.RenderQueryResults(rrows, m.fields[m.xPosition:])
+	m.viewport.SetContent(rendered)
 }
 
 func (m *resultsView) setDimensions() {
@@ -56,6 +92,13 @@ func (m *resultsView) Update(msg tea.Msg) (*resultsView, tea.Cmd) {
 		m.terminalHeight = msg.Height
 		m.terminalWidth = msg.Width
 		m.setDimensions()
+	case tea.KeyMsg:
+		switch msg.Type {
+		case tea.KeyLeft:
+			m.scrollHorizontally(-1)
+		case tea.KeyRight:
+			m.scrollHorizontally(1)
+		}
 	// We handle errors just like any other message
 	case error:
 		m.err = msg
@@ -75,7 +118,7 @@ func (m *resultsView) View() string {
 	line = fmt.Sprintf("┗%s%s┛", line, percent)
 
 	renderedResults = resultsModelStyle.Render(m.viewport.View())
-	line = textStyle.Render(line)
+	line = resultsTextStyle.Render(line)
 
 	out := lipgloss.JoinVertical(lipgloss.Center, renderedResults, line)
 	return fmt.Sprintf(

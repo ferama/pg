@@ -28,34 +28,33 @@ func NewMainView(path *utils.PathParts) *MainView {
 }
 
 func (m *MainView) Init() tea.Cmd {
+	// m.queryView.textarea.SetValue("select * from pg_replication_slots")
 	// m.queryView.textarea.SetValue("select * from sales limit 100")
 	return tea.Batch(m.queryView.Init(), m.queryView.textarea.Focus())
 }
 
-func (m *MainView) sqlExecute(connString, dbName, schema, query string) (string, error) {
+func (m *MainView) sqlExecute(connString, dbName, schema, query string) (db.ResultsFields, db.ResultsRows, error) {
 	if query == "" {
-		return "", nil
+		return nil, nil, nil
 	}
 	fields, items, err := db.Query(connString, dbName, schema, query)
 
 	if err != nil {
-		return "", err
+		return nil, nil, err
 	}
-	return db.RenderQueryResults(items, fields), nil
+	// return db.RenderQueryResults(items, fields), nil
+	return fields, items, nil
 }
 
-func (m *MainView) doQuery(query string) string {
-	res, err := m.sqlExecute(
+func (m *MainView) doQuery(query string) (db.ResultsFields, db.ResultsRows, error) {
+	fields, items, err := m.sqlExecute(
 		m.path.ConfigConnection,
 		m.path.DatabaseName,
 		m.path.SchemaName,
 		query,
 	)
-	if err != nil {
-		return err.Error()
-	} else {
-		return res
-	}
+
+	return fields, items, err
 }
 
 func (m *MainView) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -72,12 +71,16 @@ func (m *MainView) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case tea.KeyCtrlUp, tea.KeyCtrlU:
 			m.resultsView.viewport.HalfViewUp()
 		case tea.KeyCtrlX:
-			m.resultsView.viewport.SetContent("running query...")
+			m.resultsView.SetContent("running query...")
 
 			query := m.queryView.textarea.Value()
 			go func() {
-				response := m.doQuery(query)
-				m.resultsView.viewport.SetContent(response)
+				fields, items, err := m.doQuery(query)
+				if err != nil {
+					m.resultsView.SetContent(err.Error())
+				} else {
+					m.resultsView.SetResults(fields, items)
+				}
 			}()
 		}
 	// We handle errors just like any other message
