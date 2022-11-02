@@ -1,4 +1,4 @@
-package sqlview
+package results
 
 import (
 	"fmt"
@@ -11,7 +11,8 @@ import (
 )
 
 const (
-	color = "#66ccff"
+	color             = "#66ccff"
+	sqlTextareaHeight = 5
 )
 
 var (
@@ -22,7 +23,7 @@ var (
 	resultsTextStyle = lipgloss.NewStyle().Foreground(lipgloss.Color(color))
 )
 
-type resultsView struct {
+type ResultsView struct {
 	viewport       viewport.Model
 	err            error
 	terminalHeight int
@@ -33,18 +34,18 @@ type resultsView struct {
 	fields db.ResultsFields
 }
 
-func newResultsView() *resultsView {
+func NewResultsView() *ResultsView {
 	vp := viewport.New(5, 5)
-	return &resultsView{
+	return &ResultsView{
 		viewport: vp,
 	}
 }
 
-func (m *resultsView) Init() tea.Cmd {
+func (m *ResultsView) Init() tea.Cmd {
 	return nil
 }
 
-func (m *resultsView) SetResults(fields db.ResultsFields, rows db.ResultsRows) {
+func (m *ResultsView) SetResults(fields db.ResultsFields, rows db.ResultsRows) {
 	m.xPosition = 0
 
 	m.rows = rows
@@ -54,12 +55,12 @@ func (m *resultsView) SetResults(fields db.ResultsFields, rows db.ResultsRows) {
 	m.viewport.SetContent(r)
 }
 
-func (m *resultsView) SetContent(value string) {
+func (m *ResultsView) SetContent(value string) {
 	m.xPosition = 0
 	m.viewport.SetContent(value)
 }
 
-func (m *resultsView) scrollHorizontally(amount int) {
+func (m *ResultsView) scrollHorizontally(amount int) {
 	nextPos := m.xPosition + amount
 	if nextPos < 0 || nextPos >= len(m.fields) {
 		return
@@ -75,7 +76,7 @@ func (m *resultsView) scrollHorizontally(amount int) {
 	m.viewport.SetContent(rendered)
 }
 
-func (m *resultsView) setDimensions() {
+func (m *ResultsView) setDimensions() {
 	resultsModelStyle.Width(m.terminalWidth - 2)
 	resultsModelStyle.Height(m.terminalHeight - (sqlTextareaHeight + 3))
 
@@ -83,7 +84,7 @@ func (m *resultsView) setDimensions() {
 	m.viewport.Height = m.terminalHeight - (sqlTextareaHeight + 3)
 }
 
-func (m *resultsView) Update(msg tea.Msg) (*resultsView, tea.Cmd) {
+func (m *ResultsView) Update(msg tea.Msg) (*ResultsView, tea.Cmd) {
 	var cmds []tea.Cmd
 	var cmd tea.Cmd
 
@@ -94,6 +95,10 @@ func (m *resultsView) Update(msg tea.Msg) (*resultsView, tea.Cmd) {
 		m.setDimensions()
 	case tea.KeyMsg:
 		switch msg.Type {
+		case tea.KeyCtrlDown, tea.KeyCtrlD:
+			m.viewport.HalfViewDown()
+		case tea.KeyCtrlUp, tea.KeyCtrlU:
+			m.viewport.HalfViewUp()
 		case tea.KeyLeft:
 			m.scrollHorizontally(-1)
 		case tea.KeyRight:
@@ -110,7 +115,7 @@ func (m *resultsView) Update(msg tea.Msg) (*resultsView, tea.Cmd) {
 	return m, tea.Batch(cmds...)
 }
 
-func (m *resultsView) View() string {
+func (m *ResultsView) View() string {
 	var renderedResults string
 
 	percent := fmt.Sprintf("%3.f%%", m.viewport.ScrollPercent()*100)

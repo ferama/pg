@@ -1,4 +1,4 @@
-package sqlview
+package query
 
 import (
 	"fmt"
@@ -12,13 +12,13 @@ const (
 	sqlTextareaHeight = 5
 )
 
-type queryView struct {
+type QueryView struct {
 	path     *utils.PathParts
 	textarea textarea.Model
 	err      error
 }
 
-func newQueryView(path *utils.PathParts) *queryView {
+func NewQueryView(path *utils.PathParts) *QueryView {
 	ti := textarea.New()
 	ti.Placeholder = "select ..."
 	ti.Prompt = ""
@@ -26,17 +26,24 @@ func newQueryView(path *utils.PathParts) *queryView {
 	ti.SetHeight(sqlTextareaHeight)
 	ti.Focus()
 
-	return &queryView{
+	return &QueryView{
 		path:     path,
 		textarea: ti,
 		err:      nil,
 	}
 }
+func (m *QueryView) Focus() tea.Cmd {
+	return m.textarea.Focus()
+}
 
-func (m *queryView) Init() tea.Cmd {
+func (m *QueryView) Value() string {
+	return m.textarea.Value()
+}
+
+func (m *QueryView) Init() tea.Cmd {
 	return tea.Batch(textarea.Blink)
 }
-func (m *queryView) Update(msg tea.Msg) (*queryView, tea.Cmd) {
+func (m *QueryView) Update(msg tea.Msg) (*QueryView, tea.Cmd) {
 	var cmds []tea.Cmd
 	var cmd tea.Cmd
 
@@ -54,6 +61,6 @@ func (m *queryView) Update(msg tea.Msg) (*queryView, tea.Cmd) {
 	return m, tea.Batch(cmds...)
 }
 
-func (m *queryView) View() string {
+func (m *QueryView) View() string {
 	return fmt.Sprint(m.textarea.View())
 }

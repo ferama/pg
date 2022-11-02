@@ -4,6 +4,8 @@ import (
 	"fmt"
 
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/ferama/pg/cmd/sqlview/components/query"
+	"github.com/ferama/pg/cmd/sqlview/components/results"
 	"github.com/ferama/pg/pkg/db"
 	"github.com/ferama/pg/pkg/utils"
 )
@@ -11,13 +13,13 @@ import (
 type MainView struct {
 	path        *utils.PathParts
 	err         error
-	resultsView *resultsView
-	queryView   *queryView
+	resultsView *results.ResultsView
+	queryView   *query.QueryView
 }
 
 func NewMainView(path *utils.PathParts) *MainView {
-	rv := newResultsView()
-	qv := newQueryView(path)
+	rv := results.NewResultsView()
+	qv := query.NewQueryView(path)
 
 	return &MainView{
 		resultsView: rv,
@@ -30,7 +32,7 @@ func NewMainView(path *utils.PathParts) *MainView {
 func (m *MainView) Init() tea.Cmd {
 	// m.queryView.textarea.SetValue("select * from pg_replication_slots")
 	// m.queryView.textarea.SetValue("select * from sales limit 100")
-	return tea.Batch(m.queryView.Init(), m.queryView.textarea.Focus())
+	return tea.Batch(m.queryView.Init(), m.queryView.Focus())
 }
 
 func (m *MainView) sqlExecute(connString, dbName, schema, query string) (db.ResultsFields, db.ResultsRows, error) {
@@ -66,14 +68,11 @@ func (m *MainView) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch msg.Type {
 		case tea.KeyEsc:
 			return m, tea.Quit
-		case tea.KeyCtrlDown, tea.KeyCtrlD:
-			m.resultsView.viewport.HalfViewDown()
-		case tea.KeyCtrlUp, tea.KeyCtrlU:
-			m.resultsView.viewport.HalfViewUp()
+
 		case tea.KeyCtrlX:
 			m.resultsView.SetContent("running query...")
 
-			query := m.queryView.textarea.Value()
+			query := m.queryView.Value()
 			go func() {
 				fields, items, err := m.doQuery(query)
 				if err != nil {
