@@ -11,13 +11,13 @@ import (
 type MainView struct {
 	path        *utils.PathParts
 	err         error
-	resultsView *ResultsView
-	queryView   *QueryView
+	resultsView *resultsView
+	queryView   *queryView
 }
 
 func NewMainView(path *utils.PathParts) *MainView {
-	rv := NewResultsView()
-	qv := NewQueryView(path)
+	rv := newResultsView()
+	qv := newQueryView(path)
 
 	return &MainView{
 		resultsView: rv,

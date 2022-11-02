@@ -21,33 +21,33 @@ var (
 	textStyle = lipgloss.NewStyle().Foreground(lipgloss.Color(color))
 )
 
-type ResultsView struct {
+type resultsView struct {
 	viewport       viewport.Model
 	err            error
 	terminalHeight int
 	terminalWidth  int
 }
 
-func NewResultsView() *ResultsView {
+func newResultsView() *resultsView {
 	vp := viewport.New(5, 5)
-	return &ResultsView{
+	return &resultsView{
 		viewport: vp,
 	}
 }
 
-func (m *ResultsView) Init() tea.Cmd {
+func (m *resultsView) Init() tea.Cmd {
 	return nil
 }
 
-func (m *ResultsView) setDimensions() {
+func (m *resultsView) setDimensions() {
 	resultsModelStyle.Width(m.terminalWidth - 2)
-	resultsModelStyle.Height(m.terminalHeight - (SqlTextareaHeight + 3))
+	resultsModelStyle.Height(m.terminalHeight - (sqlTextareaHeight + 3))
 
 	m.viewport.Width = m.terminalWidth - 2
-	m.viewport.Height = m.terminalHeight - (SqlTextareaHeight + 3)
+	m.viewport.Height = m.terminalHeight - (sqlTextareaHeight + 3)
 }
 
-func (m *ResultsView) Update(msg tea.Msg) (*ResultsView, tea.Cmd) {
+func (m *resultsView) Update(msg tea.Msg) (*resultsView, tea.Cmd) {
 	var cmds []tea.Cmd
 	var cmd tea.Cmd
 
@@ -67,7 +67,7 @@ func (m *ResultsView) Update(msg tea.Msg) (*ResultsView, tea.Cmd) {
 	return m, tea.Batch(cmds...)
 }
 
-func (m *ResultsView) View() string {
+func (m *resultsView) View() string {
 	var renderedResults string
 
 	percent := fmt.Sprintf("%3.f%%", m.viewport.ScrollPercent()*100)
