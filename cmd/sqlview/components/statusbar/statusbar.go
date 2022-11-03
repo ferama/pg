@@ -37,6 +37,6 @@ func (m *Model) Update(msg tea.Msg) (*Model, tea.Cmd) {
 }
 
 func (m *Model) View() string {
-	out := "|ctrl+x| execute |ESC| exit"
+	out := "Ctrl+x → execute・ESC → exit・"
 	return barStyle.Render(out)
 }
