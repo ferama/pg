@@ -32,6 +32,7 @@ func listConnections() {
 			item,
 		})
 	}
+	fmt.Printf("\n%s\n", t.Render())
 }
 
 func listDatabases(connString string) {
