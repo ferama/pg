@@ -8,7 +8,7 @@ import (
 )
 
 const (
-	SqlTextareaHeight = 5
+	SqlTextareaHeight = 8
 	ColorBlur         = "#ffffff"
 	ColorFocus        = "#66ccff"
 )

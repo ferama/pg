@@ -25,7 +25,7 @@ var (
 	textFocusedStyle = lipgloss.NewStyle().Foreground(lipgloss.Color(conf.ColorFocus))
 )
 
-type ResultsView struct {
+type Model struct {
 	viewport       viewport.Model
 	err            error
 	terminalHeight int
@@ -37,31 +37,31 @@ type ResultsView struct {
 	fields db.ResultsFields
 }
 
-func NewResultsView() *ResultsView {
+func New() *Model {
 	vp := viewport.New(5, 5)
-	return &ResultsView{
+	return &Model{
 		focused:  false,
 		viewport: vp,
 	}
 }
 
-func (m *ResultsView) Init() tea.Cmd {
+func (m *Model) Init() tea.Cmd {
 	return nil
 }
 
-func (m *ResultsView) Focus() {
+func (m *Model) Focus() {
 	m.focused = true
 }
 
-func (m *ResultsView) Focused() bool {
+func (m *Model) Focused() bool {
 	return m.focused
 }
 
-func (m *ResultsView) Blur() {
+func (m *Model) Blur() {
 	m.focused = false
 }
 
-func (m *ResultsView) SetResults(fields db.ResultsFields, rows db.ResultsRows) {
+func (m *Model) SetResults(fields db.ResultsFields, rows db.ResultsRows) {
 	m.xPosition = 0
 
 	m.rows = rows
@@ -71,12 +71,12 @@ func (m *ResultsView) SetResults(fields db.ResultsFields, rows db.ResultsRows) {
 	m.viewport.SetContent(r)
 }
 
-func (m *ResultsView) SetContent(value string) {
+func (m *Model) SetContent(value string) {
 	m.xPosition = 0
 	m.viewport.SetContent(value)
 }
 
-func (m *ResultsView) scrollHorizontally(amount int) {
+func (m *Model) scrollHorizontally(amount int) {
 	nextPos := m.xPosition + amount
 	if nextPos < 0 || nextPos >= len(m.fields) {
 		return
@@ -96,7 +96,7 @@ func (m *ResultsView) scrollHorizontally(amount int) {
 	}
 }
 
-func (m *ResultsView) setDimensions() {
+func (m *Model) setDimensions() {
 	style.Width(m.terminalWidth - 2)
 	style.Height(m.terminalHeight - (conf.SqlTextareaHeight + 3))
 
@@ -107,7 +107,7 @@ func (m *ResultsView) setDimensions() {
 	m.viewport.Height = m.terminalHeight - (conf.SqlTextareaHeight + 3)
 }
 
-func (m *ResultsView) Update(msg tea.Msg) (*ResultsView, tea.Cmd) {
+func (m *Model) Update(msg tea.Msg) (*Model, tea.Cmd) {
 	var cmds []tea.Cmd
 	var cmd tea.Cmd
 
@@ -141,7 +141,7 @@ func (m *ResultsView) Update(msg tea.Msg) (*ResultsView, tea.Cmd) {
 	return m, tea.Batch(cmds...)
 }
 
-func (m *ResultsView) View() string {
+func (m *Model) View() string {
 	var renderedResults string
 
 	percent := fmt.Sprintf("%3.f%%", m.viewport.ScrollPercent()*100)
@@ -166,8 +166,5 @@ func (m *ResultsView) View() string {
 	}
 
 	out := lipgloss.JoinVertical(lipgloss.Center, renderedResults, line)
-	return fmt.Sprintf(
-		"%s\n",
-		out,
-	)
+	return out
 }

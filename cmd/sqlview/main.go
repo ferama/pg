@@ -1,11 +1,11 @@
 package sqlview
 
 import (
-	"fmt"
-
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 	"github.com/ferama/pg/cmd/sqlview/components/query"
 	"github.com/ferama/pg/cmd/sqlview/components/results"
+	"github.com/ferama/pg/cmd/sqlview/components/statusbar"
 	"github.com/ferama/pg/pkg/db"
 	"github.com/ferama/pg/pkg/utils"
 )
@@ -13,24 +13,27 @@ import (
 type MainView struct {
 	path        *utils.PathParts
 	err         error
-	resultsView *results.ResultsView
-	queryView   *query.QueryView
+	resultsView *results.Model
+	queryView   *query.Model
+	statsuBar   *statusbar.Model
 }
 
 func NewMainView(path *utils.PathParts) *MainView {
-	rv := results.NewResultsView()
-	qv := query.NewQueryView(path)
+	rv := results.New()
+	qv := query.New(path)
+	sb := statusbar.New()
 
 	return &MainView{
 		resultsView: rv,
 		queryView:   qv,
+		statsuBar:   sb,
 		path:        path,
 		err:         nil,
 	}
 }
 
 func (m *MainView) Init() tea.Cmd {
-	m.queryView.SetValue("select * from pg_replication_slots")
+	// m.queryView.SetValue("select * from pg_replication_slots")
 	// m.queryView.SetValue("select * from sales limit 100")
 	return tea.Batch(m.queryView.Init(), m.queryView.Focus())
 }
@@ -102,14 +105,16 @@ func (m *MainView) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	m.queryView, cmd = m.queryView.Update(msg)
 	cmds = append(cmds, cmd)
 
+	m.statsuBar, cmd = m.statsuBar.Update(msg)
+	cmds = append(cmds, cmd)
+
 	return m, tea.Batch(cmds...)
 }
 
 func (m *MainView) View() string {
-	return fmt.Sprintf(
-		"%s%s\n%s",
+	return lipgloss.JoinVertical(lipgloss.Left,
 		m.resultsView.View(),
 		m.queryView.View(),
-		"|ctrl+x| execute |ESC| exit",
+		m.statsuBar.View(),
 	)
 }

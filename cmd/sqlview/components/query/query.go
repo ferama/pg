@@ -9,68 +9,66 @@ import (
 )
 
 var (
-	style = lipgloss.NewStyle().
-		Foreground(lipgloss.Color(conf.ColorBlur))
-
-	focusedStyle = style.Copy().
-			Foreground(lipgloss.Color(conf.ColorFocus))
+	borderStyle = lipgloss.NewStyle().
+		Border(lipgloss.ThickBorder(), false, true, false, true).
+		BorderForeground(lipgloss.Color(conf.ColorFocus))
 )
 
-type QueryView struct {
+type Model struct {
 	path     *utils.PathParts
 	textarea textarea.Model
 	err      error
 }
 
-func NewQueryView(path *utils.PathParts) *QueryView {
+func New(path *utils.PathParts) *Model {
 	ta := textarea.New()
 	ta.Placeholder = "select ..."
 
-	ta.Prompt = lipgloss.ThickBorder().Left + " "
-
-	ta.BlurredStyle = textarea.Style{
-		Prompt: style,
-	}
-	ta.FocusedStyle = textarea.Style{
-		Prompt: focusedStyle,
-	}
+	// ta.Prompt = lipgloss.ThickBorder().Left + " "
+	ta.Prompt = ""
 
 	ta.SetWidth(10)
 	ta.SetHeight(conf.SqlTextareaHeight)
 	ta.Focus()
 
-	return &QueryView{
+	return &Model{
 		path:     path,
 		textarea: ta,
 		err:      nil,
 	}
 }
-func (m *QueryView) Focus() tea.Cmd {
+func (m *Model) Focus() tea.Cmd {
+	borderStyle.
+		BorderStyle(lipgloss.ThickBorder()).
+		BorderForeground(lipgloss.Color(conf.ColorFocus))
 	return m.textarea.Focus()
 }
 
-func (m *QueryView) Blur() {
+func (m *Model) Blur() {
+	borderStyle.
+		BorderStyle(lipgloss.NormalBorder()).
+		BorderForeground(lipgloss.Color(conf.ColorBlur))
 	m.textarea.Blur()
 }
 
-func (m *QueryView) SetValue(value string) {
+func (m *Model) SetValue(value string) {
 	m.textarea.SetValue(value)
 }
 
-func (m *QueryView) Value() string {
+func (m *Model) Value() string {
 	return m.textarea.Value()
 }
 
-func (m *QueryView) Init() tea.Cmd {
+func (m *Model) Init() tea.Cmd {
 	return tea.Batch(textarea.Blink)
 }
-func (m *QueryView) Update(msg tea.Msg) (*QueryView, tea.Cmd) {
+func (m *Model) Update(msg tea.Msg) (*Model, tea.Cmd) {
 	var cmds []tea.Cmd
 	var cmd tea.Cmd
 
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
-		m.textarea.SetWidth(msg.Width)
+		m.textarea.SetWidth(msg.Width - 2)
 	// We handle errors just like any other message
 	case error:
 		m.err = msg
@@ -82,6 +80,6 @@ func (m *QueryView) Update(msg tea.Msg) (*QueryView, tea.Cmd) {
 	return m, tea.Batch(cmds...)
 }
 
-func (m *QueryView) View() string {
-	return m.textarea.View()
+func (m *Model) View() string {
+	return borderStyle.Render(m.textarea.View())
 }
