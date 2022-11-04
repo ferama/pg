@@ -35,7 +35,7 @@ func NewMainView(path *utils.PathParts) *MainView {
 func (m *MainView) Init() tea.Cmd {
 	// m.queryView.SetValue("select * from pg_replication_slots")
 	// m.queryView.SetValue("select * from sales limit 100")
-	return tea.Batch(m.queryView.Init(), m.queryView.Focus())
+	return tea.Batch(m.queryView.Init(), m.queryView.Focus(), tea.EnterAltScreen)
 }
 
 func (m *MainView) sqlExecute(connString, dbName, schema, query string) (db.ResultsFields, db.ResultsRows, error) {

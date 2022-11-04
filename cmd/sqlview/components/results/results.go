@@ -13,21 +13,16 @@ import (
 )
 
 var (
-	blurStyle = lipgloss.NewStyle().
-			Border(lipgloss.NormalBorder(), true, true, false, true).
-			BorderForeground(lipgloss.Color(conf.ColorBlur))
-
-	focusedStyle = lipgloss.NewStyle().
-			Border(lipgloss.ThickBorder(), true, true, false, true).
-			BorderForeground(lipgloss.Color(conf.ColorFocus))
-
-	blurTextStyle    = lipgloss.NewStyle().Foreground(lipgloss.Color(conf.ColorBlur))
-	focusedTextStyle = lipgloss.NewStyle().Foreground(lipgloss.Color(conf.ColorFocus))
-
-	style     = blurStyle
-	textStyle = blurTextStyle
-
 	borderStyle = lipgloss.NormalBorder()
+
+	style = lipgloss.NewStyle().
+		BorderTop(true).
+		BorderRight(true).
+		BorderLeft(true).
+		BorderForeground(lipgloss.Color(conf.ColorBlur)).
+		BorderStyle(borderStyle)
+
+	textStyle = lipgloss.NewStyle().Foreground(lipgloss.Color(conf.ColorBlur))
 )
 
 type Model struct {
@@ -55,9 +50,11 @@ func (m *Model) Init() tea.Cmd {
 }
 
 func (m *Model) Focus() {
-	style = focusedStyle
-	textStyle = focusedTextStyle
 	borderStyle = lipgloss.ThickBorder()
+	style = style.BorderStyle(borderStyle).
+		BorderForeground(lipgloss.Color(conf.ColorFocus))
+
+	textStyle = textStyle.Foreground(lipgloss.Color(conf.ColorFocus))
 
 	m.focused = true
 }
@@ -67,9 +64,11 @@ func (m *Model) Focused() bool {
 }
 
 func (m *Model) Blur() {
-	style = blurStyle
-	textStyle = blurTextStyle
 	borderStyle = lipgloss.NormalBorder()
+	style = style.BorderStyle(borderStyle).
+		BorderForeground(lipgloss.Color(conf.ColorBlur))
+
+	textStyle = textStyle.Foreground(lipgloss.Color(conf.ColorBlur))
 
 	m.focused = false
 }
@@ -110,11 +109,8 @@ func (m *Model) scrollHorizontally(amount int) {
 }
 
 func (m *Model) setDimensions() {
-	blurStyle.Width(m.terminalWidth - 2)
-	blurStyle.Height(m.terminalHeight - (conf.SqlTextareaHeight + 3))
-
-	focusedStyle.Width(m.terminalWidth - 2)
-	focusedStyle.Height(m.terminalHeight - (conf.SqlTextareaHeight + 3))
+	style.Width(m.terminalWidth - 2)
+	style.Height(m.terminalHeight - (conf.SqlTextareaHeight + 3))
 
 	m.viewport.Width = m.terminalWidth - 2
 	m.viewport.Height = m.terminalHeight - (conf.SqlTextareaHeight + 3)
