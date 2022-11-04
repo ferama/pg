@@ -13,16 +13,21 @@ import (
 )
 
 var (
-	style = lipgloss.NewStyle().
-		Border(lipgloss.NormalBorder(), true, true, false, true).
-		BorderForeground(lipgloss.Color(conf.ColorBlur))
+	blurStyle = lipgloss.NewStyle().
+			Border(lipgloss.NormalBorder(), true, true, false, true).
+			BorderForeground(lipgloss.Color(conf.ColorBlur))
 
 	focusedStyle = lipgloss.NewStyle().
 			Border(lipgloss.ThickBorder(), true, true, false, true).
 			BorderForeground(lipgloss.Color(conf.ColorFocus))
 
-	textStyle        = lipgloss.NewStyle().Foreground(lipgloss.Color(conf.ColorBlur))
-	textFocusedStyle = lipgloss.NewStyle().Foreground(lipgloss.Color(conf.ColorFocus))
+	blurTextStyle    = lipgloss.NewStyle().Foreground(lipgloss.Color(conf.ColorBlur))
+	focusedTextStyle = lipgloss.NewStyle().Foreground(lipgloss.Color(conf.ColorFocus))
+
+	style     = blurStyle
+	textStyle = blurTextStyle
+
+	borderStyle = lipgloss.NormalBorder()
 )
 
 type Model struct {
@@ -50,6 +55,10 @@ func (m *Model) Init() tea.Cmd {
 }
 
 func (m *Model) Focus() {
+	style = focusedStyle
+	textStyle = focusedTextStyle
+	borderStyle = lipgloss.ThickBorder()
+
 	m.focused = true
 }
 
@@ -58,6 +67,10 @@ func (m *Model) Focused() bool {
 }
 
 func (m *Model) Blur() {
+	style = blurStyle
+	textStyle = blurTextStyle
+	borderStyle = lipgloss.NormalBorder()
+
 	m.focused = false
 }
 
@@ -97,8 +110,8 @@ func (m *Model) scrollHorizontally(amount int) {
 }
 
 func (m *Model) setDimensions() {
-	style.Width(m.terminalWidth - 2)
-	style.Height(m.terminalHeight - (conf.SqlTextareaHeight + 3))
+	blurStyle.Width(m.terminalWidth - 2)
+	blurStyle.Height(m.terminalHeight - (conf.SqlTextareaHeight + 3))
 
 	focusedStyle.Width(m.terminalWidth - 2)
 	focusedStyle.Height(m.terminalHeight - (conf.SqlTextareaHeight + 3))
@@ -146,10 +159,6 @@ func (m *Model) View() string {
 
 	percent := fmt.Sprintf("%3.f%%", m.viewport.ScrollPercent()*100)
 
-	borderStyle := lipgloss.NormalBorder()
-	if m.focused {
-		borderStyle = lipgloss.ThickBorder()
-	}
 	line := strings.Repeat(borderStyle.Bottom, m.viewport.Width-4)
 	line = fmt.Sprintf("%s%s%s%s",
 		borderStyle.BottomLeft,
@@ -157,14 +166,11 @@ func (m *Model) View() string {
 		percent,
 		borderStyle.BottomRight)
 
-	if m.focused {
-		renderedResults = focusedStyle.Render(m.viewport.View())
-		line = textFocusedStyle.Render(line)
-	} else {
-		renderedResults = style.Render(m.viewport.View())
-		line = textStyle.Render(line)
-	}
+	renderedResults = style.Render(m.viewport.View())
+	line = textStyle.Render(line)
 
-	out := lipgloss.JoinVertical(lipgloss.Center, renderedResults, line)
+	out := lipgloss.JoinVertical(lipgloss.Center,
+		renderedResults,
+		line)
 	return out
 }
