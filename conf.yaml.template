@@ -1,4 +1,3 @@
-useColors: false
 connections:
   - name: db1
     url: postgres://user1:pass1@host1:5432

@@ -14,6 +14,8 @@ import (
 
 func init() {
 	rootCmd.AddCommand(lsCmd)
+
+	lsCmd.Flags().BoolP("details", "d", false, "include more details")
 }
 
 func listConnections() {
@@ -72,7 +74,7 @@ func listSchemas(connString string, dbName string) {
 	db.PrintQueryResults(items, fields)
 }
 
-func listTables(connString string, dbName string, schema string) {
+func listTables(connString string, dbName string, schema string, details bool) {
 	query := fmt.Sprintf(`
 		SELECT table_name as table, table_type as type
 		FROM information_schema.tables
@@ -87,22 +89,24 @@ func listTables(connString string, dbName string, schema string) {
 	}
 	db.PrintQueryResults(items, fields)
 
-	query = fmt.Sprintf(`
-		SELECT sequence_name as sequence
-		FROM information_schema.sequences
-		WHERE sequence_schema = '%s' 
-		ORDER BY sequence_name
-		`, schema)
+	if details {
+		query = fmt.Sprintf(`
+			SELECT sequence_name as sequence
+			FROM information_schema.sequences
+			WHERE sequence_schema = '%s' 
+			ORDER BY sequence_name
+			`, schema)
 
-	fields, items, err = db.Query(connString, dbName, "", query)
-	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
+		fields, items, err = db.Query(connString, dbName, "", query)
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+		db.PrintQueryResults(items, fields)
 	}
-	db.PrintQueryResults(items, fields)
 }
 
-func listTableDetails(connString, dbName, schema, tableName string) {
+func listTableDetails(connString, dbName, schema, tableName string, details bool) {
 	// Columns
 	query := fmt.Sprintf(`
 		SELECT 
@@ -131,43 +135,47 @@ func listTableDetails(connString, dbName, schema, tableName string) {
 	}
 	db.PrintQueryResults(items, fields)
 
-	// Indexes
-	query = fmt.Sprintf(`
-		SELECT indexname as index, indexdef as def
-		FROM pg_indexes
-		WHERE tablename = '%s'
-		ORDER BY indexname
-		`, tableName)
+	if details {
+		// Indexes
+		query = fmt.Sprintf(`
+			SELECT indexname as index, indexdef as def
+			FROM pg_indexes
+			WHERE tablename = '%s'
+			ORDER BY indexname
+			`, tableName)
 
-	fields, items, err = db.Query(connString, dbName, "", query)
-	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
+		fields, items, err = db.Query(connString, dbName, "", query)
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+		db.PrintQueryResults(items, fields)
+
+		// constraints
+		query = fmt.Sprintf(`
+			SELECT
+				conname as "constraint name",
+				pg_get_constraintdef(c.oid, true) as definition
+			FROM
+				pg_constraint c
+			JOIN
+				pg_namespace n ON n.oid = c.connamespace
+			JOIN
+				pg_class cl ON cl.oid = c.conrelid
+			WHERE
+				n.nspname = '%s' AND
+				relname = '%s'
+			ORDER BY
+				contype desc`, schema, tableName)
+
+		fields, items, err = db.Query(connString, dbName, "", query)
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+		db.PrintQueryResults(items, fields)
 	}
-	db.PrintQueryResults(items, fields)
 
-	query = fmt.Sprintf(`
-		SELECT
-			conname as "constraint name",
-			pg_get_constraintdef(c.oid, true) as definition
-		FROM
-			pg_constraint c
-		JOIN
-			pg_namespace n ON n.oid = c.connamespace
-		JOIN
-			pg_class cl ON cl.oid = c.conrelid
-		WHERE
-			n.nspname = '%s' AND
-			relname = '%s'
-		ORDER BY
-			contype desc`, schema, tableName)
-
-	fields, items, err = db.Query(connString, dbName, "", query)
-	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	}
-	db.PrintQueryResults(items, fields)
 }
 
 var lsCmd = &cobra.Command{
@@ -183,6 +191,8 @@ var lsCmd = &cobra.Command{
 			return
 		}
 
+		showDetails, _ := cmd.Flags().GetBool("details")
+
 		path := utils.ParsePath(args[0], false)
 
 		if path.TableName != "" {
@@ -191,6 +201,7 @@ var lsCmd = &cobra.Command{
 				path.DatabaseName,
 				path.SchemaName,
 				path.TableName,
+				showDetails,
 			)
 			return
 		}
@@ -198,7 +209,8 @@ var lsCmd = &cobra.Command{
 			listTables(
 				path.ConfigConnection,
 				path.DatabaseName,
-				path.SchemaName)
+				path.SchemaName,
+				showDetails)
 			return
 		}
 		if path.DatabaseName != "" {

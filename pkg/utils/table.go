@@ -3,7 +3,6 @@ package utils
 import (
 	"github.com/jedib0t/go-pretty/v6/table"
 	"github.com/jedib0t/go-pretty/v6/text"
-	"github.com/spf13/viper"
 )
 
 func GetTableWriter() table.Writer {
@@ -32,11 +31,7 @@ func GetTableWriter() table.Writer {
 		Options: options,
 		Title:   table.TitleOptionsBlackOnBlue,
 	}
-	if viper.GetBool("useColors") {
-		t.SetStyle(styleColor)
-	} else {
-		t.SetStyle(table.StyleRounded)
-	}
-	// t.SetOutputMirror(os.Stdout)
+
+	t.SetStyle(styleColor)
 	return t
 }
