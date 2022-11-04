@@ -15,8 +15,15 @@ import (
 var (
 	borderStyle = lipgloss.NormalBorder()
 
+	headerStyle = lipgloss.NewStyle().
+			Background(lipgloss.Color(lipgloss.Color(conf.ColorFocus))).
+			BorderTop(true).
+			BorderRight(true).
+			BorderLeft(true).
+			BorderForeground(lipgloss.Color(conf.ColorBlur)).
+			BorderStyle(borderStyle)
+
 	style = lipgloss.NewStyle().
-		BorderTop(true).
 		BorderRight(true).
 		BorderLeft(true).
 		BorderForeground(lipgloss.Color(conf.ColorBlur)).
@@ -26,7 +33,9 @@ var (
 )
 
 type Model struct {
-	viewport       viewport.Model
+	viewport viewport.Model
+	header   viewport.Model
+
 	err            error
 	terminalHeight int
 	terminalWidth  int
@@ -39,9 +48,11 @@ type Model struct {
 
 func New() *Model {
 	vp := viewport.New(5, 5)
+	ha := viewport.New(5, 1)
 	return &Model{
 		focused:  false,
 		viewport: vp,
+		header:   ha,
 	}
 }
 
@@ -52,6 +63,9 @@ func (m *Model) Init() tea.Cmd {
 func (m *Model) Focus() {
 	borderStyle = lipgloss.ThickBorder()
 	style = style.BorderStyle(borderStyle).
+		BorderForeground(lipgloss.Color(conf.ColorFocus))
+
+	headerStyle = headerStyle.BorderStyle(borderStyle).
 		BorderForeground(lipgloss.Color(conf.ColorFocus))
 
 	textStyle = textStyle.Foreground(lipgloss.Color(conf.ColorFocus))
@@ -68,6 +82,9 @@ func (m *Model) Blur() {
 	style = style.BorderStyle(borderStyle).
 		BorderForeground(lipgloss.Color(conf.ColorBlur))
 
+	headerStyle = headerStyle.BorderStyle(borderStyle).
+		BorderForeground(lipgloss.Color(conf.ColorBlur))
+
 	textStyle = textStyle.Foreground(lipgloss.Color(conf.ColorBlur))
 
 	m.focused = false
@@ -80,7 +97,10 @@ func (m *Model) SetResults(fields db.ResultsFields, rows db.ResultsRows) {
 	m.fields = fields
 
 	r := db.RenderQueryResults(rows, fields)
-	m.viewport.SetContent(r)
+	parts := strings.Split(r, "\n")
+	m.header.SetContent(parts[0])
+	renderedContent := strings.Join(parts[1:], "\n")
+	m.viewport.SetContent(renderedContent)
 }
 
 func (m *Model) SetContent(value string) {
@@ -100,20 +120,26 @@ func (m *Model) scrollHorizontally(amount int) {
 	}
 
 	rendered := db.RenderQueryResults(rrows, m.fields[nextPos:])
-	line := strings.Split(rendered, "\n")[0]
-	line = stripansi.Strip(line)
-	if len(line) > m.terminalWidth {
-		m.viewport.SetContent(rendered)
+	parts := strings.Split(rendered, "\n")
+	header := parts[0]
+	if len(stripansi.Strip(header)) > m.terminalWidth {
+		m.header.SetContent(header)
+
+		renderedContent := strings.Join(parts[1:], "\n")
+		m.viewport.SetContent(renderedContent)
 		m.xPosition = nextPos
 	}
 }
 
 func (m *Model) setDimensions() {
 	style.Width(m.terminalWidth - 2)
-	style.Height(m.terminalHeight - (conf.SqlTextareaHeight + 3))
+	style.Height(m.terminalHeight - (conf.SqlTextareaHeight + 4))
 
 	m.viewport.Width = m.terminalWidth - 2
-	m.viewport.Height = m.terminalHeight - (conf.SqlTextareaHeight + 3)
+	m.viewport.Height = m.terminalHeight - (conf.SqlTextareaHeight + 4)
+
+	headerStyle.Width(m.terminalWidth - 2)
+	m.header.Width = m.terminalWidth - 2
 }
 
 func (m *Model) Update(msg tea.Msg) (*Model, tea.Cmd) {
@@ -147,6 +173,10 @@ func (m *Model) Update(msg tea.Msg) (*Model, tea.Cmd) {
 
 	m.viewport, cmd = m.viewport.Update(msg)
 	cmds = append(cmds, cmd)
+
+	m.header, cmd = m.header.Update(msg)
+	cmds = append(cmds, cmd)
+
 	return m, tea.Batch(cmds...)
 }
 
@@ -155,18 +185,19 @@ func (m *Model) View() string {
 
 	percent := fmt.Sprintf("%3.f%%", m.viewport.ScrollPercent()*100)
 
-	line := strings.Repeat(borderStyle.Bottom, m.viewport.Width-4)
-	line = fmt.Sprintf("%s%s%s%s",
+	bottomLine := strings.Repeat(borderStyle.Bottom, m.viewport.Width-4)
+	bottomLine = fmt.Sprintf("%s%s%s%s",
 		borderStyle.BottomLeft,
-		line,
+		bottomLine,
 		percent,
 		borderStyle.BottomRight)
 
 	renderedResults = style.Render(m.viewport.View())
-	line = textStyle.Render(line)
+	bottomLine = textStyle.Render(bottomLine)
 
 	out := lipgloss.JoinVertical(lipgloss.Center,
+		headerStyle.Render(m.header.View()),
 		renderedResults,
-		line)
+		bottomLine)
 	return out
 }
