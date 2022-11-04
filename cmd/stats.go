@@ -60,7 +60,7 @@ func statsPrint(configConn string) {
 	t.AppendHeader(th)
 	defer func() {
 		fmt.Println()
-		t.Render()
+		fmt.Println(t.Render())
 		fmt.Println()
 	}()
 
