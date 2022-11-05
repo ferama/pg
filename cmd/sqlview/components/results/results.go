@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
@@ -49,6 +50,10 @@ type Model struct {
 func New() *Model {
 	vp := viewport.New(5, 5)
 	ha := viewport.New(5, 1)
+
+	vp.KeyMap.Down = key.Binding{}
+	vp.KeyMap.Up = key.Binding{}
+
 	return &Model{
 		focused:  false,
 		viewport: vp,
@@ -160,6 +165,10 @@ func (m *Model) Update(msg tea.Msg) (*Model, tea.Cmd) {
 			m.viewport.HalfViewDown()
 		case tea.KeyCtrlUp, tea.KeyCtrlU:
 			m.viewport.HalfViewUp()
+		case tea.KeyDown:
+			m.viewport.LineDown(1)
+		case tea.KeyUp:
+			m.viewport.LineUp(1)
 		case tea.KeyLeft:
 			m.scrollHorizontally(-1)
 		case tea.KeyRight:

@@ -69,7 +69,7 @@ func (m *MainView) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.Type {
-		case tea.KeyEsc, tea.KeyCtrlC:
+		case tea.KeyEsc:
 			return m, tea.Quit
 		case tea.KeyTab:
 			if m.resultsView.Focused() {
