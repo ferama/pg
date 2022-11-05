@@ -6,7 +6,6 @@ import (
 	"github.com/ferama/pg/cmd/sqlview/components/query"
 	"github.com/ferama/pg/cmd/sqlview/components/results"
 	"github.com/ferama/pg/cmd/sqlview/components/statusbar"
-	"github.com/ferama/pg/pkg/db"
 	"github.com/ferama/pg/pkg/utils"
 )
 
@@ -34,32 +33,8 @@ func NewMainView(path *utils.PathParts) *MainView {
 
 func (m *MainView) Init() tea.Cmd {
 	// m.queryView.SetValue("select * from pg_replication_slots")
-	// m.queryView.SetValue("select * from sales limit 100")
+	m.queryView.SetValue("select * from sales limit 100")
 	return tea.Batch(m.queryView.Init(), m.queryView.Focus(), tea.EnterAltScreen)
-}
-
-func (m *MainView) sqlExecute(connString, dbName, schema, query string) (db.ResultsFields, db.ResultsRows, error) {
-	if query == "" {
-		return nil, nil, nil
-	}
-	fields, items, err := db.Query(connString, dbName, schema, query)
-
-	if err != nil {
-		return nil, nil, err
-	}
-	// return db.RenderQueryResults(items, fields), nil
-	return fields, items, nil
-}
-
-func (m *MainView) doQuery(query string) (db.ResultsFields, db.ResultsRows, error) {
-	fields, items, err := m.sqlExecute(
-		m.path.ConfigConnection,
-		m.path.DatabaseName,
-		m.path.SchemaName,
-		query,
-	)
-
-	return fields, items, err
 }
 
 func (m *MainView) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -80,18 +55,6 @@ func (m *MainView) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.resultsView.Focus()
 				m.queryView.Blur()
 			}
-		case tea.KeyCtrlX:
-			m.resultsView.SetContent("running query...")
-
-			query := m.queryView.Value()
-			go func() {
-				fields, items, err := m.doQuery(query)
-				if err != nil {
-					m.resultsView.SetContent(err.Error())
-				} else {
-					m.resultsView.SetResults(fields, items)
-				}
-			}()
 		}
 	// We handle errors just like any other message
 	case error:

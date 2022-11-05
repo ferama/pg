@@ -5,6 +5,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/ferama/pg/pkg/conf"
+	"github.com/ferama/pg/pkg/db"
 	"github.com/ferama/pg/pkg/utils"
 )
 
@@ -13,6 +14,15 @@ var (
 		Border(lipgloss.ThickBorder(), false, true, false, true).
 		BorderForeground(lipgloss.Color(conf.ColorFocus))
 )
+
+type QueryStatusMsg struct {
+	Content string
+}
+
+type QueryResultsMsg struct {
+	Rows    db.ResultsRows
+	Columns db.ResultsFields
+}
 
 type Model struct {
 	path     *utils.PathParts
@@ -55,8 +65,45 @@ func (m *Model) SetValue(value string) {
 	m.textarea.SetValue(value)
 }
 
-func (m *Model) Value() string {
+func (m *Model) value() string {
 	return m.textarea.Value()
+}
+
+func (m *Model) sqlExecute(connString, dbName, schema, query string) (db.ResultsFields, db.ResultsRows, error) {
+	if query == "" {
+		return nil, nil, nil
+	}
+	fields, items, err := db.Query(connString, dbName, schema, query)
+
+	if err != nil {
+		return nil, nil, err
+	}
+	// return db.RenderQueryResults(items, fields), nil
+	return fields, items, nil
+}
+
+func (m *Model) doQuery() tea.Cmd {
+	return func() tea.Msg {
+		query := m.value()
+
+		fields, items, err := m.sqlExecute(
+			m.path.ConfigConnection,
+			m.path.DatabaseName,
+			m.path.SchemaName,
+			query,
+		)
+		if err != nil {
+			return QueryStatusMsg{
+				Content: err.Error(),
+			}
+		} else {
+			return QueryResultsMsg{
+				Rows:    items,
+				Columns: fields,
+			}
+		}
+
+	}
 }
 
 func (m *Model) Init() tea.Cmd {
@@ -69,6 +116,21 @@ func (m *Model) Update(msg tea.Msg) (*Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
 		m.textarea.SetWidth(msg.Width - 2)
+	case tea.KeyMsg:
+		switch msg.Type {
+		case tea.KeyShiftDown:
+		case tea.KeyShiftUp:
+		case tea.KeyCtrlX:
+			cmd = func() tea.Msg {
+				return QueryStatusMsg{
+					Content: "running query...",
+				}
+			}
+			cmds = append(cmds, cmd)
+
+			cmd = m.doQuery()
+			cmds = append(cmds, cmd)
+		}
 	// We handle errors just like any other message
 	case error:
 		m.err = msg

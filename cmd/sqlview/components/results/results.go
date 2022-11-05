@@ -8,6 +8,7 @@ import (
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/ferama/pg/cmd/sqlview/components/query"
 	"github.com/ferama/pg/pkg/conf"
 	"github.com/ferama/pg/pkg/db"
 	"github.com/ferama/pg/pkg/stripansi"
@@ -95,7 +96,7 @@ func (m *Model) Blur() {
 	m.focused = false
 }
 
-func (m *Model) SetResults(fields db.ResultsFields, rows db.ResultsRows) {
+func (m *Model) setResults(fields db.ResultsFields, rows db.ResultsRows) {
 	m.xPosition = 0
 
 	m.rows = rows
@@ -108,7 +109,7 @@ func (m *Model) SetResults(fields db.ResultsFields, rows db.ResultsRows) {
 	m.viewport.SetContent(renderedContent)
 }
 
-func (m *Model) SetContent(value string) {
+func (m *Model) setContent(value string) {
 	m.xPosition = 0
 	m.viewport.SetContent(value)
 }
@@ -152,6 +153,12 @@ func (m *Model) Update(msg tea.Msg) (*Model, tea.Cmd) {
 	var cmd tea.Cmd
 
 	switch msg := msg.(type) {
+	case query.QueryStatusMsg:
+		m.setContent(msg.Content)
+
+	case query.QueryResultsMsg:
+		m.setResults(msg.Columns, msg.Rows)
+
 	case tea.WindowSizeMsg:
 		m.terminalHeight = msg.Height
 		m.terminalWidth = msg.Width
