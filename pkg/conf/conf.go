@@ -10,7 +10,7 @@ import (
 const (
 	SqlTextareaHeight = 8
 	ColorBlur         = "#ffffff"
-	ColorFocus        = "#79bfee"
+	ColorFocus        = "#77bbee"
 )
 
 func GetAvailableConnections() []string {

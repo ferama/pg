@@ -21,7 +21,7 @@ type QueryStatusMsg struct {
 
 type QueryResultsMsg struct {
 	Rows    db.ResultsRows
-	Columns db.ResultsFields
+	Columns db.ResultsColumns
 }
 
 type Model struct {
@@ -69,7 +69,7 @@ func (m *Model) value() string {
 	return m.textarea.Value()
 }
 
-func (m *Model) sqlExecute(connString, dbName, schema, query string) (db.ResultsFields, db.ResultsRows, error) {
+func (m *Model) sqlExecute(connString, dbName, schema, query string) (db.ResultsColumns, db.ResultsRows, error) {
 	if query == "" {
 		return nil, nil, nil
 	}

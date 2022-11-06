@@ -9,7 +9,7 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-type ResultsFields []string
+type ResultsColumns []string
 
 type ResultsRows [][]string
 
@@ -24,7 +24,7 @@ func castType(item any) string {
 	return fmt.Sprint(value)
 }
 
-func Query(connString, dbName, schema, query string) (ResultsFields, ResultsRows, error) {
+func Query(connString, dbName, schema, query string) (ResultsColumns, ResultsRows, error) {
 	if query == "" {
 		return nil, nil, errors.New("query is empty")
 	}
@@ -51,7 +51,7 @@ func Query(connString, dbName, schema, query string) (ResultsFields, ResultsRows
 	var out ResultsRows
 	out = make(ResultsRows, 0)
 
-	fields := make(ResultsFields, 0)
+	fields := make(ResultsColumns, 0)
 	for _, f := range rows.FieldDescriptions() {
 		fields = append(fields, f.Name)
 	}
