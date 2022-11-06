@@ -8,9 +8,9 @@ import (
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/ferama/pg/cmd/sqlview/components/query"
 	"github.com/ferama/pg/pkg/conf"
 	"github.com/ferama/pg/pkg/db"
+	"github.com/ferama/pg/pkg/sqlview/components/query"
 	"github.com/ferama/pg/pkg/stripansi"
 )
 

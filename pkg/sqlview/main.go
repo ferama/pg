@@ -3,9 +3,9 @@ package sqlview
 import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/ferama/pg/cmd/sqlview/components/query"
-	"github.com/ferama/pg/cmd/sqlview/components/results"
-	"github.com/ferama/pg/cmd/sqlview/components/statusbar"
+	"github.com/ferama/pg/pkg/sqlview/components/query"
+	"github.com/ferama/pg/pkg/sqlview/components/results"
+	"github.com/ferama/pg/pkg/sqlview/components/statusbar"
 	"github.com/ferama/pg/pkg/utils"
 )
 

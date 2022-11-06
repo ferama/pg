@@ -5,8 +5,8 @@ import (
 	"log"
 	"os"
 
-	"github.com/ferama/pg/cmd/sqlview"
 	"github.com/ferama/pg/pkg/autocomplete"
+	"github.com/ferama/pg/pkg/sqlview"
 	"github.com/ferama/pg/pkg/utils"
 	"github.com/spf13/cobra"
 
