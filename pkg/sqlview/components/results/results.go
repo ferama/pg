@@ -83,7 +83,7 @@ func (m *Model) setResults(cols db.ResultsColumns, rows db.ResultsRows) {
 		rs = append(rs, row)
 	}
 
-	m.table = table.New(upperCols, m.terminalWidth, m.terminalHeight)
+	m.table = table.New(upperCols, 0, 0)
 
 	m.table.SetRows(rs)
 	m.setDimensions()
@@ -101,8 +101,12 @@ func (m *Model) Update(msg tea.Msg) (*Model, tea.Cmd) {
 	var cmd tea.Cmd
 
 	switch msg := msg.(type) {
-	// case query.QueryStatusMsg:
-	// 	m.setContent(msg.Content)
+	case query.QueryStatusMsg:
+		m.table = table.New([]string{"status"}, 0, 0)
+		m.table.SetRows([]table.Row{
+			table.SimpleRow{msg.Content},
+		})
+		m.setDimensions()
 
 	case query.QueryResultsMsg:
 		m.setResults(msg.Columns, msg.Rows)

@@ -161,8 +161,10 @@ func (m *Model) SetSize(width, height int) {
 	m.viewPort.Width = width
 	m.viewPort.Height = height - 1
 
-	m.Styles.SelectedRow.Width(width)
-	m.Styles.UnselectedRow.Width(width)
+	// the sum here is not exactly right. it is an almost an upper bound
+	m.Styles.SelectedRow.Width(m.contentWidth + m.viewPort.Width)
+	m.Styles.UnselectedRow.Width(m.contentWidth + m.viewPort.Width)
+
 	if m.cursor > m.viewPort.YOffset+m.viewPort.Height-1 {
 		m.cursor = m.viewPort.YOffset + m.viewPort.Height - 1
 		m.updateView()

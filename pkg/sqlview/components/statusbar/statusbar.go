@@ -52,7 +52,11 @@ func (m *Model) Update(msg tea.Msg) (*Model, tea.Cmd) {
 
 func (m *Model) View() string {
 	out := "<Ctrl+x> → execute・<ESC> → exit・"
-	path := fmt.Sprintf("・%s/%s/%s", m.path.ConfigConnection, m.path.DatabaseName, m.path.SchemaName)
+	path := fmt.Sprintf("・%s/%s/%s",
+		m.path.ConfigConnection,
+		m.path.DatabaseName,
+		m.path.SchemaName,
+	)
 	r := lipgloss.JoinHorizontal(lipgloss.Left,
 		infoStyle.Render(path),
 		shortcutStyle.Render(out))

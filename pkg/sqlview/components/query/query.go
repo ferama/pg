@@ -102,7 +102,6 @@ func (m *Model) doQuery() tea.Cmd {
 				Columns: fields,
 			}
 		}
-
 	}
 }
 
