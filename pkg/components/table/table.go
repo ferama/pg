@@ -37,7 +37,6 @@ func (row SimpleRow) Render(w io.Writer, model Model, index int) {
 	}
 	s := strings.Join(cells, "\t")
 
-	s = fmt.Sprintf("%s%s", s, strings.Repeat(" ", 3))
 	if index == model.Cursor() && model.focused {
 		s = model.Styles.SelectedRow.Render(s)
 	} else {
@@ -162,6 +161,8 @@ func (m *Model) SetSize(width, height int) {
 	m.viewPort.Width = width
 	m.viewPort.Height = height - 1
 
+	m.Styles.SelectedRow.Width(width)
+	m.Styles.UnselectedRow.Width(width)
 	if m.cursor > m.viewPort.YOffset+m.viewPort.Height-1 {
 		m.cursor = m.viewPort.YOffset + m.viewPort.Height - 1
 		m.updateView()
