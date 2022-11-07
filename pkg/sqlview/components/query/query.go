@@ -70,15 +70,10 @@ func (m *Model) value() string {
 }
 
 func (m *Model) sqlExecute(connString, dbName, schema, query string) (db.ResultsColumns, db.ResultsRows, error) {
-	if query == "" {
-		return nil, nil, nil
-	}
 	fields, items, err := db.Query(connString, dbName, schema, query)
-
 	if err != nil {
 		return nil, nil, err
 	}
-	// return db.RenderQueryResults(items, fields), nil
 	return fields, items, nil
 }
 

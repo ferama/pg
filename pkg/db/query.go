@@ -48,6 +48,7 @@ func Query(connString, dbName, schema, query string) (ResultsColumns, ResultsRow
 	}
 	rows, err := conn.Query(context.Background(), query)
 	if err != nil {
+		tx.Rollback(ctx)
 		return nil, nil, err
 	}
 	defer rows.Close()
