@@ -150,7 +150,7 @@ func DefaultStyles() Styles {
 		UnselectedRow: lipgloss.NewStyle(),
 		SelectedRow: lipgloss.NewStyle().
 			Bold(true).
-			Background(lipgloss.Color(conf.ColorFocus)).
+			Background(lipgloss.Color(conf.ColorTableRowFocus)).
 			Foreground(lipgloss.Color("#000000")),
 	}
 }

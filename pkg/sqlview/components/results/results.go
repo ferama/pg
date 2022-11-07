@@ -25,7 +25,9 @@ var (
 	titleStyle = lipgloss.NewStyle().
 			Align(lipgloss.Center).
 			Bold(true).
-			Foreground(lipgloss.Color("#44bb77")).Underline(true)
+			Foreground(lipgloss.Color(conf.ColorTitle)).
+			PaddingBottom(1).
+			Underline(true)
 )
 
 type Model struct {
@@ -103,7 +105,7 @@ func (m *Model) setDimensions() {
 	style.Height(m.terminalHeight - (conf.SqlTextareaHeight + 3))
 
 	titleStyle.Width(m.terminalWidth - 2)
-	m.table.SetSize(m.terminalWidth-2, m.terminalHeight-(conf.SqlTextareaHeight+4))
+	m.table.SetSize(m.terminalWidth-2, m.terminalHeight-(conf.SqlTextareaHeight+5))
 }
 
 func (m *Model) Update(msg tea.Msg) (*Model, tea.Cmd) {
