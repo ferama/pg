@@ -20,8 +20,7 @@ type QueryStatusMsg struct {
 }
 
 type QueryResultsMsg struct {
-	Rows    db.ResultsRows
-	Columns db.ResultsColumns
+	Results *db.QueryResults
 }
 
 type Model struct {
@@ -69,19 +68,19 @@ func (m *Model) value() string {
 	return m.textarea.Value()
 }
 
-func (m *Model) sqlExecute(connString, dbName, schema, query string) (db.ResultsColumns, db.ResultsRows, error) {
-	fields, items, err := db.Query(connString, dbName, schema, query)
+func (m *Model) sqlExecute(connString, dbName, schema, query string) (*db.QueryResults, error) {
+	results, err := db.Query(connString, dbName, schema, query)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
-	return fields, items, nil
+	return results, nil
 }
 
 func (m *Model) doQuery() tea.Cmd {
 	return func() tea.Msg {
 		query := m.value()
 
-		fields, items, err := m.sqlExecute(
+		results, err := m.sqlExecute(
 			m.path.ConfigConnection,
 			m.path.DatabaseName,
 			m.path.SchemaName,
@@ -92,14 +91,13 @@ func (m *Model) doQuery() tea.Cmd {
 				Content: err.Error(),
 			}
 		} else {
-			if len(fields) == 0 {
+			if len(results.Columns) == 0 {
 				return QueryStatusMsg{
 					"done",
 				}
 			} else {
 				return QueryResultsMsg{
-					Rows:    items,
-					Columns: fields,
+					Results: results,
 				}
 			}
 		}

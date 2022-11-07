@@ -52,12 +52,12 @@ func listDatabases(connString string) {
 		ORDER BY d.datname
 	`
 
-	fields, items, err := db.Query(connString, "", "", query)
+	results, err := db.Query(connString, "", "", query)
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
 	}
-	db.PrintQueryResults(items, fields)
+	db.PrintQueryResults(results)
 }
 
 func listSchemas(connString string, dbName string) {
@@ -66,12 +66,12 @@ func listSchemas(connString string, dbName string) {
 		FROM information_schema.schemata
 		ORDER BY schema_name
 	`
-	fields, items, err := db.Query(connString, dbName, "", query)
+	results, err := db.Query(connString, dbName, "", query)
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
 	}
-	db.PrintQueryResults(items, fields)
+	db.PrintQueryResults(results)
 }
 
 func listTables(connString string, dbName string, schema string, details bool) {
@@ -82,12 +82,12 @@ func listTables(connString string, dbName string, schema string, details bool) {
 		ORDER BY table_name
 		`, schema)
 
-	fields, items, err := db.Query(connString, dbName, "", query)
+	results, err := db.Query(connString, dbName, "", query)
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
 	}
-	db.PrintQueryResults(items, fields)
+	db.PrintQueryResults(results)
 
 	if details {
 		query = fmt.Sprintf(`
@@ -97,12 +97,12 @@ func listTables(connString string, dbName string, schema string, details bool) {
 			ORDER BY sequence_name
 			`, schema)
 
-		fields, items, err = db.Query(connString, dbName, "", query)
+		results, err = db.Query(connString, dbName, "", query)
 		if err != nil {
 			fmt.Println(err)
 			os.Exit(1)
 		}
-		db.PrintQueryResults(items, fields)
+		db.PrintQueryResults(results)
 	}
 }
 
@@ -128,12 +128,12 @@ func listTableDetails(connString, dbName, schema, tableName string, details bool
 		ORDER BY c.column_name
 		`, schema, tableName)
 
-	fields, items, err := db.Query(connString, dbName, "", query)
+	results, err := db.Query(connString, dbName, "", query)
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
 	}
-	db.PrintQueryResults(items, fields)
+	db.PrintQueryResults(results)
 
 	if details {
 		// Indexes
@@ -144,12 +144,12 @@ func listTableDetails(connString, dbName, schema, tableName string, details bool
 			ORDER BY indexname
 			`, tableName)
 
-		fields, items, err = db.Query(connString, dbName, "", query)
+		results, err = db.Query(connString, dbName, "", query)
 		if err != nil {
 			fmt.Println(err)
 			os.Exit(1)
 		}
-		db.PrintQueryResults(items, fields)
+		db.PrintQueryResults(results)
 
 		// constraints
 		query = fmt.Sprintf(`
@@ -168,12 +168,12 @@ func listTableDetails(connString, dbName, schema, tableName string, details bool
 			ORDER BY
 				contype desc`, schema, tableName)
 
-		fields, items, err = db.Query(connString, dbName, "", query)
+		results, err = db.Query(connString, dbName, "", query)
 		if err != nil {
 			fmt.Println(err)
 			os.Exit(1)
 		}
-		db.PrintQueryResults(items, fields)
+		db.PrintQueryResults(results)
 	}
 
 }

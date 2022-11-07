@@ -7,39 +7,43 @@ import (
 	"github.com/ferama/pg/pkg/pool"
 )
 
-type ResultsColumns []string
+type Columns []string
+type Rows [][]string
 
-type ResultsRows [][]string
+type QueryResults struct {
+	Columns Columns
+	Rows    Rows
+}
 
-func Query(connString, dbName, schema, query string) (ResultsColumns, ResultsRows, error) {
+func Query(connString, dbName, schema, query string) (*QueryResults, error) {
 	if query == "" {
-		return nil, nil, errors.New("query is empty")
+		return nil, errors.New("query is empty")
 	}
 	conn, err := pool.GetPoolFromConf(connString, dbName)
 	if err != nil {
-		return nil, nil, fmt.Errorf("unable to connect to database: %v", err)
+		return nil, fmt.Errorf("unable to connect to database: %v", err)
 	}
 	defer conn.Close()
 
 	if schema != "" {
 		_, err := conn.Exec(fmt.Sprintf("set search_path to %s", schema))
 		if err != nil {
-			return nil, nil, fmt.Errorf("failed to select schema: %v", err)
+			return nil, fmt.Errorf("failed to select schema: %v", err)
 		}
 	}
 
 	rows, err := conn.Query(query)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 	defer rows.Close()
 
-	var out ResultsRows
-	out = make(ResultsRows, 0)
+	var out Rows
+	out = make(Rows, 0)
 
 	columns, err := rows.Columns()
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
 	for rows.Next() {
@@ -52,7 +56,7 @@ func Query(connString, dbName, schema, query string) (ResultsColumns, ResultsRow
 		}
 		err = rows.Scan(values...)
 		if err != nil {
-			return nil, nil, err
+			return nil, err
 		}
 
 		for i := range columns {
@@ -68,5 +72,9 @@ func Query(connString, dbName, schema, query string) (ResultsColumns, ResultsRow
 		}
 		out = append(out, row)
 	}
-	return columns, out, nil
+
+	return &QueryResults{
+		Columns: columns,
+		Rows:    out,
+	}, nil
 }

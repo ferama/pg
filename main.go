@@ -19,9 +19,6 @@ func init() {
 	viper.AddConfigPath(".")
 	viper.AddConfigPath(homeConf)
 
-	// override example:
-	// USECOLORS=false pg ls
-
 	viper.AutomaticEnv()
 	err := viper.ReadInConfig() // Find and read the config file
 	if err != nil {             // Handle errors reading the config file

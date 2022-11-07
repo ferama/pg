@@ -10,7 +10,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func flatArray(items db.ResultsRows) []string {
+func flatArray(items db.Rows) []string {
 	ret := make([]string, 0)
 	for _, item := range items {
 		ret = append(ret, fmt.Sprintf("%s/", item[0]))
@@ -54,11 +54,11 @@ func Path(level int) func(cmd *cobra.Command, args []string, toComplete string) 
 				WHERE table_schema = '%s' 
 				ORDER BY table_name
 				`, path.SchemaName)
-			_, items, err := db.Query(path.ConfigConnection, path.DatabaseName, "", query)
+			results, err := db.Query(path.ConfigConnection, path.DatabaseName, "", query)
 			if err != nil {
 				return nil, shellDirective
 			}
-			ret := flatArray(items)
+			ret := flatArray(results.Rows)
 			for i := range ret {
 				ret[i] = fmt.Sprintf("%s/%s%s", basePath, ret[i], suffix)
 			}
@@ -71,11 +71,11 @@ func Path(level int) func(cmd *cobra.Command, args []string, toComplete string) 
 				FROM information_schema.schemata
 				ORDER BY schema_name
 			`
-			_, items, err := db.Query(path.ConfigConnection, path.DatabaseName, "", query)
+			results, err := db.Query(path.ConfigConnection, path.DatabaseName, "", query)
 			if err != nil {
 				return nil, shellDirective
 			}
-			ret := flatArray(items)
+			ret := flatArray(results.Rows)
 			for i := range ret {
 				ret[i] = fmt.Sprintf("%s/%s%s", basePath, ret[i], suffix)
 			}
@@ -89,11 +89,11 @@ func Path(level int) func(cmd *cobra.Command, args []string, toComplete string) 
 				WHERE d.datistemplate = false
 				ORDER BY d.datname
 				`
-			_, items, err := db.Query(path.ConfigConnection, "", "", query)
+			results, err := db.Query(path.ConfigConnection, "", "", query)
 			if err != nil {
 				return nil, shellDirective
 			}
-			ret := flatArray(items)
+			ret := flatArray(results.Rows)
 			for i := range ret {
 				ret[i] = fmt.Sprintf("%s/%s%s", basePath, ret[i], suffix)
 			}

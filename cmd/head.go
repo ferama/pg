@@ -67,12 +67,12 @@ func headTable(
 		LIMIT 10
 		`, cols, tableName, whereConditions)
 
-	fields, items, err := db.Query(connString, dbName, schema, query)
+	results, err := db.Query(connString, dbName, schema, query)
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
 	}
-	db.PrintQueryResults(items, fields)
+	db.PrintQueryResults(results)
 }
 
 func init() {

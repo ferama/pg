@@ -67,15 +67,15 @@ func (m *Model) Blur() {
 	m.table.Blur()
 }
 
-func (m *Model) setResults(cols db.ResultsColumns, rows db.ResultsRows) {
+func (m *Model) setResults(results *db.QueryResults) {
 
-	upperCols := make(db.ResultsColumns, 0)
-	for _, c := range cols {
+	upperCols := make(db.Columns, 0)
+	for _, c := range results.Columns {
 		upperCols = append(upperCols, strings.ToUpper(c))
 	}
 
 	var rs []table.Row
-	for _, r := range rows {
+	for _, r := range results.Rows {
 		row := table.SimpleRow{}
 		for _, v := range r {
 			row = append(row, v)
@@ -109,7 +109,7 @@ func (m *Model) Update(msg tea.Msg) (*Model, tea.Cmd) {
 		m.setDimensions()
 
 	case query.QueryResultsMsg:
-		m.setResults(msg.Columns, msg.Rows)
+		m.setResults(msg.Results)
 
 	case tea.WindowSizeMsg:
 		m.terminalHeight = msg.Height
