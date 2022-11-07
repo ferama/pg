@@ -37,15 +37,6 @@ func GetPoolFromConf(connName string, dbname string) (*sql.DB, error) {
 		url = fmt.Sprintf("%s//%s", withProto[0], url)
 	}
 
-	// config, err := pgxpool.ParseConfig(url)
-	// if err != nil {
-	// 	return nil, err
-	// }
-	// pgpool, err := pgxpool.NewWithConfig(context.Background(), config)
-	// if err != nil {
-	// 	return nil, err
-	// }
-	// return pgpool, nil
 	db, err := sql.Open("pgx", url)
 	if err != nil {
 		return nil, err

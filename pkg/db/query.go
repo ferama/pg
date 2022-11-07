@@ -3,6 +3,7 @@ package db
 import (
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/ferama/pg/pkg/pool"
 )
@@ -15,10 +16,27 @@ type QueryResults struct {
 	Rows    Rows
 }
 
+// Returns a clean query without any comment statements
+func cleanQuery(query string) string {
+	lines := []string{}
+
+	for _, line := range strings.Split(query, "\n") {
+		line = strings.TrimSpace(line)
+		if strings.HasPrefix(line, "--") {
+			continue
+		}
+		lines = append(lines, line)
+	}
+
+	return strings.TrimSpace(strings.Join(lines, "\n"))
+}
+
 func Query(connString, dbName, schema, query string) (*QueryResults, error) {
 	if query == "" {
 		return nil, errors.New("query is empty")
 	}
+	query = cleanQuery(query)
+
 	conn, err := pool.GetPoolFromConf(connString, dbName)
 	if err != nil {
 		return nil, fmt.Errorf("unable to connect to database: %v", err)
