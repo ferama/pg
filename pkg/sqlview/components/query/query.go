@@ -119,6 +119,8 @@ func (m *Model) Update(msg tea.Msg) (*Model, tea.Cmd) {
 		switch msg.Type {
 		case tea.KeyShiftDown:
 		case tea.KeyShiftUp:
+		case tea.KeyCtrlD:
+			m.SetValue("")
 		case tea.KeyCtrlX:
 			cmd = func() tea.Msg {
 				return QueryStatusMsg{
