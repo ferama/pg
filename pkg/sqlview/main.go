@@ -3,38 +3,52 @@ package sqlview
 import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/ferama/pg/pkg/sqlview/components/browser"
 	"github.com/ferama/pg/pkg/sqlview/components/query"
 	"github.com/ferama/pg/pkg/sqlview/components/results"
 	"github.com/ferama/pg/pkg/sqlview/components/statusbar"
 	"github.com/ferama/pg/pkg/utils"
 )
 
+const (
+	queryLayoutStatus int = iota
+	browserLayoutStatus
+)
+
 type MainView struct {
-	path        *utils.PathParts
-	err         error
+	path *utils.PathParts
+	err  error
+
 	resultsView *results.Model
 	queryView   *query.Model
 	statsuBar   *statusbar.Model
+	browserView *browser.Model
+
+	activeLayout int
 }
 
 func NewMainView(path *utils.PathParts) *MainView {
-	rv := results.New()
-	qv := query.New(path)
-	sb := statusbar.New(path)
+	resultsView := results.New()
+	queryView := query.New(path)
+	statusBar := statusbar.New(path)
+	browserView := browser.New()
 
 	return &MainView{
-		resultsView: rv,
-		queryView:   qv,
-		statsuBar:   sb,
-		path:        path,
-		err:         nil,
+		resultsView: resultsView,
+		queryView:   queryView,
+		statsuBar:   statusBar,
+		browserView: browserView,
+
+		path: path,
+		err:  nil,
+
+		activeLayout: queryLayoutStatus,
 	}
 }
 
 func (m *MainView) Init() tea.Cmd {
 	// m.queryView.SetValue("select * from pg_replication_slots")
 	// m.queryView.SetValue("select * from sales limit 100")
-	// m.queryView.SetValue("insert into tab2 values (2, 'test2')")
 	return tea.Batch(m.queryView.Init(), m.queryView.Focus(), tea.EnterAltScreen)
 }
 
@@ -46,7 +60,13 @@ func (m *MainView) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyMsg:
 		switch msg.Type {
 		case tea.KeyEsc:
-			return m, tea.Quit
+			if m.activeLayout == browserLayoutStatus {
+				m.activeLayout = queryLayoutStatus
+			} else {
+				return m, tea.Quit
+			}
+		case tea.KeyCtrlO:
+			m.activeLayout = browserLayoutStatus
 		case tea.KeyTab:
 			if m.resultsView.Focused() {
 				m.resultsView.Blur()
@@ -66,6 +86,9 @@ func (m *MainView) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	m.resultsView, cmd = m.resultsView.Update(msg)
 	cmds = append(cmds, cmd)
 
+	m.browserView, cmd = m.browserView.Update(msg)
+	cmds = append(cmds, cmd)
+
 	m.queryView, cmd = m.queryView.Update(msg)
 	cmds = append(cmds, cmd)
 
@@ -76,9 +99,18 @@ func (m *MainView) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m *MainView) View() string {
-	return lipgloss.JoinVertical(lipgloss.Left,
-		m.resultsView.View(),
-		m.queryView.View(),
-		m.statsuBar.View(),
-	)
+	switch m.activeLayout {
+	case queryLayoutStatus:
+		return lipgloss.JoinVertical(lipgloss.Left,
+			m.resultsView.View(),
+			m.queryView.View(),
+			m.statsuBar.View(),
+		)
+	case browserLayoutStatus:
+		return lipgloss.JoinVertical(lipgloss.Left,
+			m.browserView.View(),
+			m.statsuBar.View(),
+		)
+	}
+	return ""
 }
