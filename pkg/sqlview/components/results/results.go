@@ -21,6 +21,11 @@ var (
 		BorderBottom(true).
 		BorderForeground(lipgloss.Color(conf.ColorBlur)).
 		BorderStyle(borderStyle)
+
+	titleStyle = lipgloss.NewStyle().
+			Align(lipgloss.Center).
+			Bold(true).
+			Foreground(lipgloss.Color("#44bb77")).Underline(true)
 )
 
 type Model struct {
@@ -97,7 +102,8 @@ func (m *Model) setDimensions() {
 	style.Width(m.terminalWidth - 2)
 	style.Height(m.terminalHeight - (conf.SqlTextareaHeight + 3))
 
-	m.table.SetSize(m.terminalWidth-2, m.terminalHeight-(conf.SqlTextareaHeight+3))
+	titleStyle.Width(m.terminalWidth - 2)
+	m.table.SetSize(m.terminalWidth-2, m.terminalHeight-(conf.SqlTextareaHeight+4))
 }
 
 func (m *Model) Update(msg tea.Msg) (*Model, tea.Cmd) {
@@ -106,7 +112,7 @@ func (m *Model) Update(msg tea.Msg) (*Model, tea.Cmd) {
 
 	switch msg := msg.(type) {
 	case query.QueryStatusMsg:
-		m.table = table.New([]string{"status"}, 0, 0)
+		m.table = table.New([]string{"STATUS"}, 0, 0)
 		m.table.SetRows([]table.Row{
 			table.SimpleRow{msg.Content},
 		})
@@ -132,5 +138,10 @@ func (m *Model) Update(msg tea.Msg) (*Model, tea.Cmd) {
 }
 
 func (m *Model) View() string {
-	return style.Render(m.table.View())
+	return style.Render(
+		lipgloss.JoinVertical(lipgloss.Left,
+			titleStyle.Render("Query Results"),
+			m.table.View(),
+		),
+	)
 }

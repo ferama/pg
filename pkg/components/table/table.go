@@ -171,6 +171,14 @@ func (m *Model) SetSize(width, height int) {
 	}
 }
 
+func (m *Model) GetViewportWidth() int {
+	return m.viewPort.Width
+}
+
+func (m *Model) GetViewportHeight() int {
+	return m.viewPort.Height
+}
+
 // Cursor returns the index of the selected row.
 func (m Model) Cursor() int {
 	return m.cursor
