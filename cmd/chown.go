@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"context"
 	"fmt"
 	"os"
 
@@ -33,7 +32,7 @@ var chownCmd = &cobra.Command{
 				os.Exit(1)
 			}
 			defer conn.Close()
-			_, err = conn.Exec(context.Background(), query)
+			_, err = conn.Exec(query)
 			if err != nil {
 				fmt.Printf("error: %v", err)
 				os.Exit(1)

@@ -10,7 +10,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func flatArray(items [][]string) []string {
+func flatArray(items db.ResultsRows) []string {
 	ret := make([]string, 0)
 	for _, item := range items {
 		ret = append(ret, fmt.Sprintf("%s/", item[0]))

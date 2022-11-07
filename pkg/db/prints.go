@@ -7,12 +7,12 @@ import (
 	"github.com/jedib0t/go-pretty/v6/table"
 )
 
-func PrintQueryResults(items [][]string, fields []string) {
+func PrintQueryResults(items ResultsRows, fields ResultsColumns) {
 	res := RenderQueryResults(items, fields)
 	fmt.Printf("\n%s\n\n", res)
 }
 
-func RenderQueryResults(items [][]string, fields []string) string {
+func RenderQueryResults(items ResultsRows, fields ResultsColumns) string {
 	t := utils.GetTableWriter()
 
 	var tr table.Row

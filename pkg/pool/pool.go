@@ -1,16 +1,16 @@
 package pool
 
 import (
-	"context"
+	"database/sql"
 	"errors"
 	"fmt"
 	"strings"
 
 	"github.com/ferama/pg/pkg/conf"
-	"github.com/jackc/pgx/v5/pgxpool"
+	_ "github.com/jackc/pgx/v5/stdlib"
 )
 
-func GetPoolFromConf(connName string, dbname string) (*pgxpool.Pool, error) {
+func GetPoolFromConf(connName string, dbname string) (*sql.DB, error) {
 	url, err := conf.GetDBConnURL(connName)
 	if err != nil {
 		return nil, err
@@ -37,13 +37,18 @@ func GetPoolFromConf(connName string, dbname string) (*pgxpool.Pool, error) {
 		url = fmt.Sprintf("%s//%s", withProto[0], url)
 	}
 
-	config, err := pgxpool.ParseConfig(url)
+	// config, err := pgxpool.ParseConfig(url)
+	// if err != nil {
+	// 	return nil, err
+	// }
+	// pgpool, err := pgxpool.NewWithConfig(context.Background(), config)
+	// if err != nil {
+	// 	return nil, err
+	// }
+	// return pgpool, nil
+	db, err := sql.Open("pgx", url)
 	if err != nil {
 		return nil, err
 	}
-	pgpool, err := pgxpool.NewWithConfig(context.Background(), config)
-	if err != nil {
-		return nil, err
-	}
-	return pgpool, nil
+	return db, nil
 }

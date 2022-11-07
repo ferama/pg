@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"context"
 	"fmt"
 	"os"
 
@@ -21,7 +20,7 @@ func statsPrint(configConn string) {
 	defer conn.Close()
 
 	query := "show max_connections"
-	rows1, err := conn.Query(context.Background(), query)
+	rows1, err := conn.Query(query)
 	if err != nil {
 		fmt.Printf("queryRow failed: %v", err)
 		os.Exit(1)
@@ -38,7 +37,7 @@ func statsPrint(configConn string) {
 	}
 
 	query = "SELECT sum(numbackends) as current_connections FROM pg_stat_database"
-	rows2, err := conn.Query(context.Background(), query)
+	rows2, err := conn.Query(query)
 	if err != nil {
 		fmt.Printf("queryRow failed: %v", err)
 		os.Exit(1)

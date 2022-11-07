@@ -92,9 +92,15 @@ func (m *Model) doQuery() tea.Cmd {
 				Content: err.Error(),
 			}
 		} else {
-			return QueryResultsMsg{
-				Rows:    items,
-				Columns: fields,
+			if len(fields) == 0 {
+				return QueryStatusMsg{
+					"done",
+				}
+			} else {
+				return QueryResultsMsg{
+					Rows:    items,
+					Columns: fields,
+				}
 			}
 		}
 	}

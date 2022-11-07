@@ -34,6 +34,7 @@ func NewMainView(path *utils.PathParts) *MainView {
 func (m *MainView) Init() tea.Cmd {
 	// m.queryView.SetValue("select * from pg_replication_slots")
 	// m.queryView.SetValue("select * from sales limit 100")
+	// m.queryView.SetValue("insert into tab2 values (2, 'test2')")
 	return tea.Batch(m.queryView.Init(), m.queryView.Focus(), tea.EnterAltScreen)
 }
 
