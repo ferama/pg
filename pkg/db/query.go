@@ -41,12 +41,21 @@ func Query(connString, dbName, schema, query string) (ResultsColumns, ResultsRow
 		}
 	}
 
+	ctx := context.Background()
+	tx, err := conn.Begin(ctx)
+	if err != nil {
+		return nil, nil, err
+	}
 	rows, err := conn.Query(context.Background(), query)
 	if err != nil {
-		// return nil, nil, fmt.Errorf("queryRow2 failed: %s", err.Error())
 		return nil, nil, err
 	}
 	defer rows.Close()
+
+	err = tx.Commit(ctx)
+	if err != nil {
+		return nil, nil, err
+	}
 
 	var out ResultsRows
 	out = make(ResultsRows, 0)
