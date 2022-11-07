@@ -78,7 +78,11 @@ func (m *Model) setResults(results *db.QueryResults) {
 	for _, r := range results.Rows {
 		row := table.SimpleRow{}
 		for _, v := range r {
-			row = append(row, v)
+			out := v
+			if len(out) > conf.ItemMaxLen {
+				out = out[:conf.ItemMaxLen] + "..."
+			}
+			row = append(row, out)
 		}
 		rs = append(rs, row)
 	}

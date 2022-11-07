@@ -3,6 +3,7 @@ package db
 import (
 	"fmt"
 
+	"github.com/ferama/pg/pkg/conf"
 	"github.com/ferama/pg/pkg/utils"
 	"github.com/jedib0t/go-pretty/v6/table"
 )
@@ -21,10 +22,14 @@ func RenderQueryResults(results *QueryResults) string {
 	}
 	t.AppendHeader(tr)
 
-	for _, row := range results.Columns {
+	for _, row := range results.Rows {
 		var tr table.Row
 		for _, item := range row {
-			tr = append(tr, item)
+			out := item
+			if len(out) > conf.ItemMaxLen {
+				out = out[:conf.ItemMaxLen] + "..."
+			}
+			tr = append(tr, out)
 		}
 		t.AppendRow(tr)
 	}

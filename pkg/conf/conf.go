@@ -11,6 +11,7 @@ const (
 	SqlTextareaHeight = 8
 	ColorBlur         = "#ffffff"
 	ColorFocus        = "#77bbee"
+	ItemMaxLen        = 40
 )
 
 func GetAvailableConnections() []string {

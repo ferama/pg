@@ -107,11 +107,11 @@ func DefaultKeyMap() KeyMap {
 			key.WithHelp("home", "top"),
 		),
 		PageDown: key.NewBinding(
-			key.WithKeys("pgdown"),
+			key.WithKeys("pgdown", "ctrl+down"),
 			key.WithHelp("pgdown", "page down"),
 		),
 		PageUp: key.NewBinding(
-			key.WithKeys("pgup"),
+			key.WithKeys("pgup", "ctrl+up"),
 			key.WithHelp("pgup", "page up"),
 		),
 		Down: key.NewBinding(
