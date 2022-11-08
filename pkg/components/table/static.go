@@ -15,7 +15,7 @@ func NewStatic(columns []string) *StaticTable {
 
 	t.Styles.Header = lipgloss.NewStyle().
 		Bold(true).
-		Background(lipgloss.Color(conf.ColorTitle)).
+		Background(lipgloss.Color(conf.ColorHeader)).
 		Foreground(lipgloss.Color("#000000"))
 
 	st := &StaticTable{

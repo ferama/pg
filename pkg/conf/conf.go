@@ -12,6 +12,7 @@ const (
 	ColorBlur         = "#ffffff"
 	ColorFocus        = "#77bbee"
 
+	ColorHeader        = "#33aa66"
 	ColorTitle         = "#44bb77"
 	ColorTableRowFocus = "#33aa66"
 	ItemMaxLen         = 40
