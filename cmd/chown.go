@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/ferama/pg/pkg/pool"
+	"github.com/ferama/pg/pkg/db"
 	"github.com/ferama/pg/pkg/utils"
 	"github.com/spf13/cobra"
 )
@@ -26,7 +26,7 @@ var chownCmd = &cobra.Command{
 			OWNER to %s
 			`, path.DatabaseName, owner)
 
-			conn, err := pool.GetPoolFromConf(path.ConfigConnection, path.DatabaseName)
+			conn, err := db.GetDBFromConf(path.ConfigConnection, path.DatabaseName)
 			if err != nil {
 				fmt.Printf("unable to connect to database: %v", err)
 				os.Exit(1)

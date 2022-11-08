@@ -1,4 +1,4 @@
-package pool
+package db
 
 import (
 	"database/sql"
@@ -10,7 +10,7 @@ import (
 	_ "github.com/jackc/pgx/v5/stdlib"
 )
 
-func GetPoolFromConf(connName string, dbname string) (*sql.DB, error) {
+func GetDBFromConf(connName string, dbname string) (*sql.DB, error) {
 	url, err := conf.GetDBConnURL(connName)
 	if err != nil {
 		return nil, err

@@ -6,13 +6,13 @@ import (
 
 	"github.com/ferama/pg/pkg/autocomplete"
 	"github.com/ferama/pg/pkg/components/table"
-	"github.com/ferama/pg/pkg/pool"
+	"github.com/ferama/pg/pkg/db"
 	"github.com/ferama/pg/pkg/utils"
 	"github.com/spf13/cobra"
 )
 
 func statsPrint(configConn string) {
-	conn, err := pool.GetPoolFromConf(configConn, "")
+	conn, err := db.GetDBFromConf(configConn, "")
 	if err != nil {
 		fmt.Printf("unable to connect to database: %v", err)
 		os.Exit(1)

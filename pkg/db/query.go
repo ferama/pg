@@ -4,8 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"strings"
-
-	"github.com/ferama/pg/pkg/pool"
 )
 
 type Columns []string
@@ -40,7 +38,7 @@ func Query(connString, dbName, schema, query string) (*QueryResults, error) {
 	}
 	query = cleanQuery(query)
 
-	conn, err := pool.GetPoolFromConf(connString, dbName)
+	conn, err := GetDBFromConf(connString, dbName)
 	if err != nil {
 		return nil, fmt.Errorf("unable to connect to database: %v", err)
 	}
