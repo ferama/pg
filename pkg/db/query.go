@@ -9,7 +9,10 @@ import (
 )
 
 type Columns []string
-type Rows [][]string
+
+type Row []string
+
+type Rows []Row
 
 type QueryResults struct {
 	Columns Columns
@@ -64,7 +67,7 @@ func Query(connString, dbName, schema, query string) (*QueryResults, error) {
 
 		return &QueryResults{
 			Columns: Columns{"Rows Affected"},
-			Rows:    Rows{[]string{fmt.Sprint(affected)}},
+			Rows:    Rows{Row{fmt.Sprint(affected)}},
 		}, nil
 	}
 
@@ -83,8 +86,8 @@ func Query(connString, dbName, schema, query string) (*QueryResults, error) {
 	}
 
 	for rows.Next() {
-		var row []string
-		row = make([]string, 0)
+		var row Row
+		row = make(Row, 0)
 
 		values := make([]any, len(columns))
 		for i := range values {
