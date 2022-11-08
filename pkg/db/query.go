@@ -50,6 +50,24 @@ func Query(connString, dbName, schema, query string) (*QueryResults, error) {
 		}
 	}
 
+	action := strings.ToLower(strings.Split(query, " ")[0])
+	if action == "update" || action == "delete" {
+		res, err := conn.Exec(query)
+		if err != nil {
+			return nil, err
+		}
+
+		affected, err := res.RowsAffected()
+		if err != nil {
+			return nil, err
+		}
+
+		return &QueryResults{
+			Columns: Columns{"Rows Affected"},
+			Rows:    Rows{[]string{fmt.Sprint(affected)}},
+		}, nil
+	}
+
 	rows, err := conn.Query(query)
 	if err != nil {
 		return nil, err
