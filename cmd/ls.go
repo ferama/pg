@@ -5,10 +5,10 @@ import (
 	"os"
 
 	"github.com/ferama/pg/pkg/autocomplete"
+	"github.com/ferama/pg/pkg/components/table"
 	"github.com/ferama/pg/pkg/conf"
 	"github.com/ferama/pg/pkg/db"
 	"github.com/ferama/pg/pkg/utils"
-	"github.com/jedib0t/go-pretty/v6/table"
 	"github.com/spf13/cobra"
 )
 
@@ -21,20 +21,13 @@ func init() {
 func listConnections() {
 	c := conf.GetAvailableConnections()
 
-	t := utils.GetTableWriter()
-	t.AppendHeader(table.Row{"Connection"})
-	defer func() {
-		fmt.Println()
-		t.Render()
-		fmt.Println()
-	}()
-
+	t := table.NewStatic([]string{"CONNECTION"})
+	var rs []table.SimpleRow
 	for _, item := range c {
-		t.AppendRow(table.Row{
-			item,
-		})
+		rs = append(rs, table.SimpleRow{item})
 	}
-	fmt.Printf("\n%s\n", t.Render())
+	t.SetRows(rs)
+	fmt.Printf("\n%s\n\n", t.Render())
 }
 
 func listDatabases(connString string) {

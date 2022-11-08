@@ -2,10 +2,10 @@ package db
 
 import (
 	"fmt"
+	"strings"
 
+	"github.com/ferama/pg/pkg/components/table"
 	"github.com/ferama/pg/pkg/conf"
-	"github.com/ferama/pg/pkg/utils"
-	"github.com/jedib0t/go-pretty/v6/table"
 )
 
 func PrintQueryResults(results *QueryResults) {
@@ -14,16 +14,16 @@ func PrintQueryResults(results *QueryResults) {
 }
 
 func RenderQueryResults(results *QueryResults) string {
-	t := utils.GetTableWriter()
 
-	var tr table.Row
-	for _, f := range results.Columns {
-		tr = append(tr, f)
+	var upper []string
+	for _, c := range results.Columns {
+		upper = append(upper, strings.ToUpper(c))
 	}
-	t.AppendHeader(tr)
+	t := table.NewStatic(upper)
+	var rs []table.SimpleRow
 
 	for _, row := range results.Rows {
-		var tr table.Row
+		var tr table.SimpleRow
 		for _, item := range row {
 			out := item
 			if len(out) > conf.ItemMaxLen {
@@ -31,8 +31,10 @@ func RenderQueryResults(results *QueryResults) string {
 			}
 			tr = append(tr, out)
 		}
-		t.AppendRow(tr)
+		rs = append(rs, tr)
 	}
+
+	t.SetRows(rs)
 
 	return t.Render()
 }

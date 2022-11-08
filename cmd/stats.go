@@ -5,9 +5,9 @@ import (
 	"os"
 
 	"github.com/ferama/pg/pkg/autocomplete"
+	"github.com/ferama/pg/pkg/components/table"
 	"github.com/ferama/pg/pkg/pool"
 	"github.com/ferama/pg/pkg/utils"
-	"github.com/jedib0t/go-pretty/v6/table"
 	"github.com/spf13/cobra"
 )
 
@@ -52,21 +52,14 @@ func statsPrint(configConn string) {
 		os.Exit(1)
 	}
 
-	t := utils.GetTableWriter()
-	var th table.Row
-	th = append(th, "Max Connections")
-	th = append(th, "Current Connections")
-	t.AppendHeader(th)
-	defer func() {
-		fmt.Println()
-		fmt.Println(t.Render())
-		fmt.Println()
-	}()
-
-	var tr table.Row
-	tr = append(tr, maxConnections)
-	tr = append(tr, currentConnections)
-	t.AppendRow(tr)
+	t := table.NewStatic([]string{"MAX CONNECTIONS", "CURRENT CONNECTIONS"})
+	var rs []table.SimpleRow
+	rs = append(rs, table.SimpleRow{
+		maxConnections,
+		currentConnections,
+	})
+	t.SetRows(rs)
+	fmt.Printf("\n%s\n\n", t.Render())
 }
 
 func init() {

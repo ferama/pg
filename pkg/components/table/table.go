@@ -146,7 +146,7 @@ func DefaultStyles() Styles {
 	return Styles{
 		Title: lipgloss.NewStyle().Bold(true),
 		Cell: lipgloss.NewStyle().
-			Padding(0, 0, 0, 2),
+			Padding(0, 1, 0, 1),
 		UnselectedRow: lipgloss.NewStyle(),
 		SelectedRow: lipgloss.NewStyle().
 			Bold(true).
