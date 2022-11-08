@@ -12,7 +12,8 @@ type StaticTable struct {
 
 func NewStatic(columns []string) *StaticTable {
 	t := New(columns, 0, 0)
-	t.Styles.Title = lipgloss.NewStyle().
+
+	t.Styles.Header = lipgloss.NewStyle().
 		Bold(true).
 		Background(lipgloss.Color(conf.ColorTitle)).
 		Foreground(lipgloss.Color("#000000"))
@@ -34,9 +35,8 @@ func (t *StaticTable) SetRows(rows []SimpleRow) {
 }
 
 func (t *StaticTable) Render() string {
-
 	t.table.SetSize(t.table.contentWidth, t.totalRows+1) // +1 include header
-	t.table.Styles.Title.
-		Width(t.table.contentWidth)
+	t.table.updateView()
+
 	return t.table.View()
 }

@@ -8,9 +8,10 @@ import (
 )
 
 const (
-	SqlTextareaHeight  = 8
-	ColorBlur          = "#ffffff"
-	ColorFocus         = "#77bbee"
+	SqlTextareaHeight = 8
+	ColorBlur         = "#ffffff"
+	ColorFocus        = "#77bbee"
+
 	ColorTitle         = "#44bb77"
 	ColorTableRowFocus = "#33aa66"
 	ItemMaxLen         = 40

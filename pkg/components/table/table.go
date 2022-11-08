@@ -135,8 +135,9 @@ func DefaultKeyMap() KeyMap {
 
 // Styles holds the styling for the table.
 type Styles struct {
-	Title         lipgloss.Style
+	Header        lipgloss.Style
 	Cell          lipgloss.Style
+	HeaderCell    lipgloss.Style
 	UnselectedRow lipgloss.Style
 	SelectedRow   lipgloss.Style
 }
@@ -144,8 +145,11 @@ type Styles struct {
 // DefaultStyles used by the `New` constructor.
 func DefaultStyles() Styles {
 	return Styles{
-		Title: lipgloss.NewStyle().Bold(true),
+		Header: lipgloss.NewStyle().
+			Bold(true),
 		Cell: lipgloss.NewStyle().
+			Padding(0, 1, 0, 1),
+		HeaderCell: lipgloss.NewStyle().
 			Padding(0, 1, 0, 1),
 		UnselectedRow: lipgloss.NewStyle(),
 		SelectedRow: lipgloss.NewStyle().
@@ -162,6 +166,7 @@ func (m *Model) SetSize(width, height int) {
 	m.viewPort.Height = height - 1
 
 	// the sum here is not exactly right. it is an almost an upper bound
+	m.Styles.Header.Width(m.contentWidth + m.viewPort.Width)
 	m.Styles.SelectedRow.Width(m.contentWidth + m.viewPort.Width)
 	m.Styles.UnselectedRow.Width(m.contentWidth + m.viewPort.Width)
 
@@ -201,12 +206,14 @@ func (m *Model) updateView() {
 	var b strings.Builder
 	m.tabWriter.Init(&b, 0, 4, 1, ' ', 0)
 
-	cols := make([]string, 0)
-	for _, c := range m.cols {
-		cols = append(cols, m.Styles.Cell.Render(c))
+	cols := make([]string, len(m.cols))
+	for i, c := range m.cols {
+		cols[i] = m.Styles.HeaderCell.Render(c)
 	}
 	// rendering the header.
-	fmt.Fprintln(m.tabWriter, m.Styles.Title.Render(strings.Join(cols, "\t")))
+	s := strings.Join(cols, "\t")
+	s = m.Styles.Header.Render(s)
+	fmt.Fprintln(m.tabWriter, s)
 
 	// rendering the rows.
 	for i, row := range m.rows {
@@ -219,7 +226,7 @@ func (m *Model) updateView() {
 	m.contentWidth = lipgloss.Width(content)
 
 	if m.offset > 0 {
-		content = trucateOffset(content, m.offset)
+		content = truncateOffset(content, m.offset)
 	}
 
 	// split table at first line-break to take header and rows apart.
@@ -405,14 +412,14 @@ func (m Model) View() string {
 
 var reANSISeq = regexp.MustCompile("^[\u001B\u009B][[\\]()#;?]*(?:(?:(?:[a-zA-Z\\d]*(?:;[a-zA-Z\\d]*)*)?\u0007)|(?:(?:\\d{1,4}(?:;\\d{0,4})*)?[\\dA-PRZcf-ntqry=><~]))")
 
-// trucateOffset trucates the beginning of the given block of text.
+// truncateOffset trucates the beginning of the given block of text.
 // It handles more than 1 cell wide charaters
 // and preserves ANSI escape sequences.
 //
 // TODO: find a better way to keep ANSI escape sequences
 // than having to use regexp to remove them, trim the line
 // and restore them at the end.
-func trucateOffset(s string, offset uint) string {
+func truncateOffset(s string, offset uint) string {
 	if offset == 0 {
 		return s
 	}
