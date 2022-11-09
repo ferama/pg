@@ -1,4 +1,4 @@
-package query
+package history
 
 import (
 	"errors"
@@ -7,21 +7,40 @@ import (
 
 const maxSize = 100
 
-type history struct {
+var (
+	once     sync.Once
+	instance *History
+)
+
+type History struct {
 	currentIndex int
 	list         []string
 
 	lock sync.Mutex
 }
 
-func newHistory() *history {
-	return &history{
+func GetInstance() *History {
+	once.Do(func() {
+		instance = newHistory()
+	})
+	return instance
+}
+
+func newHistory() *History {
+	return &History{
 		currentIndex: -1,
 		list:         make([]string, 0),
 	}
 }
 
-func (h *history) append(item string) {
+func (h *History) GetList() []string {
+	h.lock.Lock()
+	defer h.lock.Unlock()
+
+	return h.list
+}
+
+func (h *History) Append(item string) {
 	h.lock.Lock()
 	defer h.lock.Unlock()
 
@@ -41,7 +60,7 @@ func (h *history) append(item string) {
 	}
 }
 
-func (h *history) getPrev() (string, error) {
+func (h *History) GetPrev() (string, error) {
 	h.lock.Lock()
 	defer h.lock.Unlock()
 
@@ -52,7 +71,7 @@ func (h *history) getPrev() (string, error) {
 	return "", errors.New("do not have prev element")
 }
 
-func (h *history) getNext() (string, error) {
+func (h *History) GetNext() (string, error) {
 	h.lock.Lock()
 	defer h.lock.Unlock()
 

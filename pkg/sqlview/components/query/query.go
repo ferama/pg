@@ -6,6 +6,7 @@ import (
 	"github.com/charmbracelet/lipgloss"
 	"github.com/ferama/pg/pkg/conf"
 	"github.com/ferama/pg/pkg/db"
+	"github.com/ferama/pg/pkg/history"
 	"github.com/ferama/pg/pkg/utils"
 )
 
@@ -27,7 +28,7 @@ type Model struct {
 	path     *utils.PathParts
 	textarea textarea.Model
 
-	history *history
+	history *history.History
 	err     error
 }
 
@@ -44,7 +45,7 @@ func New(path *utils.PathParts) *Model {
 	return &Model{
 		path:     path,
 		textarea: ta,
-		history:  newHistory(),
+		history:  history.GetInstance(),
 		err:      nil,
 	}
 }
@@ -82,7 +83,7 @@ func (m *Model) doQuery() tea.Cmd {
 	return func() tea.Msg {
 		query := m.value()
 
-		m.history.append(query)
+		m.history.Append(query)
 
 		results, err := m.sqlExecute(
 			m.path.ConfigConnection,
@@ -121,12 +122,12 @@ func (m *Model) Update(msg tea.Msg) (*Model, tea.Cmd) {
 	case tea.KeyMsg:
 		switch msg.Type {
 		case tea.KeyShiftDown:
-			q, err := m.history.getNext()
+			q, err := m.history.GetNext()
 			if err == nil {
 				m.textarea.SetValue(q)
 			}
 		case tea.KeyShiftUp:
-			q, err := m.history.getPrev()
+			q, err := m.history.GetPrev()
 			if err == nil {
 				m.textarea.SetValue(q)
 			}

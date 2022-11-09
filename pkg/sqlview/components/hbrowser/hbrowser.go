@@ -1,13 +1,16 @@
-package browser
+package hbrowser
 
 import (
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/ferama/pg/pkg/conf"
+	"github.com/ferama/pg/pkg/history"
 )
 
-type BrowserStatesMsg struct {
+// https://github.com/charmbracelet/bubbletea/blob/master/examples/list-simple/main.go
+
+type HBrowserStatesMsg struct {
 }
 type listItem struct {
 	title, desc string
@@ -18,7 +21,15 @@ func (i listItem) Description() string { return i.desc }
 func (i listItem) FilterValue() string { return i.title }
 
 var (
-	style = lipgloss.NewStyle()
+	borderStyle = lipgloss.ThickBorder()
+
+	style = lipgloss.NewStyle().
+		BorderTop(true).
+		BorderRight(true).
+		BorderLeft(true).
+		BorderBottom(true).
+		BorderForeground(lipgloss.Color(conf.ColorFocus)).
+		BorderStyle(borderStyle)
 )
 
 type Model struct {
@@ -60,27 +71,29 @@ func (m *Model) setState() tea.Msg {
 		Foreground(lipgloss.Color(conf.ColorTitle))
 	listModel.Styles.FilterPrompt.Foreground(lipgloss.Color(conf.ColorFocus))
 
-	c := conf.GetAvailableConnections()
+	h := history.GetInstance()
+	hitems := h.GetList()
 	items := make([]list.Item, 0)
-	for _, i := range c {
+	for _, i := range hitems {
 		items = append(items, listItem{
-			title: i, desc: "-",
+			title: i, desc: "",
 		})
 	}
+
 	delegate.ShowDescription = false
 	listModel.SetDelegate(delegate)
 	listModel.SetItems(items)
-	listModel.Title = "Connections"
+	listModel.Title = "Query History"
 
 	m.list = listModel
-	return BrowserStatesMsg{}
+	return HBrowserStatesMsg{}
 }
 
 func (m *Model) setDimensions() {
-	style.Width(m.terminalWidth - 2)
+	style.Width(m.terminalWidth - 4)
 	style.Height(m.terminalHeight - 4)
 
-	m.list.SetSize(m.terminalWidth, m.terminalHeight-3)
+	m.list.SetSize(m.terminalWidth-4, m.terminalHeight-4)
 }
 
 func (m *Model) Init() tea.Cmd {
@@ -91,8 +104,9 @@ func (m *Model) Focused() bool {
 	return m.focused
 }
 
-func (m *Model) Focus() {
+func (m *Model) Focus() tea.Cmd {
 	m.focused = true
+	return m.setState
 }
 
 func (m *Model) Blur() {
@@ -107,6 +121,9 @@ func (m *Model) Update(msg tea.Msg) (*Model, tea.Cmd) {
 	case tea.WindowSizeMsg:
 		m.terminalHeight = msg.Height
 		m.terminalWidth = msg.Width
+		m.setDimensions()
+
+	case HBrowserStatesMsg:
 		m.setDimensions()
 
 	case tea.KeyMsg:
