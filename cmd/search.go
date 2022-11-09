@@ -45,9 +45,10 @@ func headGetWhereCondition(filters []string) (string, error) {
 	return where, nil
 }
 
-func headTable(
+func searchTable(
 	connString, dbName, schema, tableName string,
 	columns, filters []string,
+	limit int,
 ) {
 
 	cols := "*"
@@ -64,8 +65,8 @@ func headTable(
 		SELECT %s
 		FROM %s
 		WHERE true %s
-		LIMIT 10
-		`, cols, tableName, whereConditions)
+		LIMIT %d
+		`, cols, tableName, whereConditions, limit)
 
 	results, err := db.Query(connString, dbName, schema, query)
 	if err != nil {
@@ -76,40 +77,43 @@ func headTable(
 }
 
 func init() {
-	rootCmd.AddCommand(headCmd)
+	rootCmd.AddCommand(searchCmd)
 
-	headCmd.Flags().StringSliceP("columns", "c", nil, "include columns. empty to include all")
-	headCmd.Flags().StringSliceP("filters", "f", nil, "filter column by value")
+	searchCmd.Flags().StringSliceP("columns", "c", nil, "include columns. empty to include all")
+	searchCmd.Flags().StringSliceP("filters", "f", nil, "filter column by value")
+	searchCmd.Flags().IntP("limit", "l", 10, "limit results")
 }
 
-var headCmd = &cobra.Command{
-	Use:   "head",
+var searchCmd = &cobra.Command{
+	Use:   "search",
 	Args:  cobra.MinimumNArgs(1),
 	Short: "Display first table records",
 	Example: `
   # get only some columns
-  $ pg head myconn/testdb/public/sales -c age,sex,city
+  	$ pg search myconn/testdb/public/sales -c age,sex,city
   # or
-  $ pg head myconn/testdb/public/sales -c age -c sex
+  	$ pg search myconn/testdb/public/sales -c age -c sex
   # add where conditions
-  $ pg head myconn/testdb/public/sales -f sex=M
+  	$ pg search myconn/testdb/public/sales -f sex=M
 	`,
 	ValidArgsFunction: autocomplete.Path(4),
 	Run: func(cmd *cobra.Command, args []string) {
 
 		columns, _ := cmd.Flags().GetStringSlice("columns")
 		filters, _ := cmd.Flags().GetStringSlice("filters")
+		limit, _ := cmd.Flags().GetInt("limit")
 
 		path := utils.ParsePath(args[0], false)
 
 		if path.TableName != "" {
-			headTable(
+			searchTable(
 				path.ConfigConnection,
 				path.DatabaseName,
 				path.SchemaName,
 				path.TableName,
 				columns,
 				filters,
+				limit,
 			)
 		} else {
 			fmt.Fprintf(os.Stderr, "table '%s' not found", path.TableName)
