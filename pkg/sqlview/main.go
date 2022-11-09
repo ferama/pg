@@ -5,6 +5,7 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/ferama/pg/pkg/sqlview/components/browser"
 	"github.com/ferama/pg/pkg/sqlview/components/query"
 	"github.com/ferama/pg/pkg/sqlview/components/results"
 	"github.com/ferama/pg/pkg/sqlview/components/statusbar"
@@ -18,12 +19,12 @@ type MainView struct {
 	resultsView *results.Model
 	queryView   *query.Model
 	statsuBar   *statusbar.Model
+
+	historyBrowser *browser.Model
 }
 
 func NewMainView(path *utils.PathParts) *MainView {
-	resultsView := results.New()
 	queryView := query.New(path)
-	statusBar := statusbar.New(path)
 
 	if path.TableName != "" {
 		query := fmt.Sprintf("SELECT *\nFROM %s\nLIMIT 10", path.TableName)
@@ -32,9 +33,11 @@ func NewMainView(path *utils.PathParts) *MainView {
 	}
 
 	return &MainView{
-		resultsView: resultsView,
+		resultsView: results.New(),
 		queryView:   queryView,
-		statsuBar:   statusBar,
+		statsuBar:   statusbar.New(path),
+
+		historyBrowser: browser.New(),
 
 		path: path,
 		err:  nil,
@@ -79,6 +82,9 @@ func (m *MainView) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	cmds = append(cmds, cmd)
 
 	m.statsuBar, cmd = m.statsuBar.Update(msg)
+	cmds = append(cmds, cmd)
+
+	m.historyBrowser, cmd = m.historyBrowser.Update(msg)
 	cmds = append(cmds, cmd)
 
 	return m, tea.Batch(cmds...)
