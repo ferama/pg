@@ -11,7 +11,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func headGetWhereCondition(filters []string) (string, error) {
+func searchGetWhereCondition(filters []string) (string, error) {
 	validSplits := []string{
 		"=",
 		"!=",
@@ -19,6 +19,10 @@ func headGetWhereCondition(filters []string) (string, error) {
 		"<",
 		"<=",
 		">=",
+		"like",
+		"ilike",
+		"is null",
+		"not null",
 	}
 
 	where := ""
@@ -32,7 +36,10 @@ func headGetWhereCondition(filters []string) (string, error) {
 				if len(parts) != 2 {
 					continue
 				}
-				t = fmt.Sprintf("%s%s'%s'", parts[0], vs, parts[1])
+				t = fmt.Sprintf("%s %s '%s'",
+					strings.TrimSpace(parts[0]),
+					vs,
+					strings.TrimSpace(parts[1]))
 			}
 			if t == "" {
 				return "", fmt.Errorf("invalid filter: '%s'", f)
@@ -56,7 +63,7 @@ func searchTable(
 		cols = strings.Join(columns, ",")
 	}
 
-	whereConditions, err := headGetWhereCondition(filters)
+	whereConditions, err := searchGetWhereCondition(filters)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
@@ -90,11 +97,16 @@ var searchCmd = &cobra.Command{
 	Short: "Display first table records",
 	Example: `
   # get only some columns
-  	$ pg search myconn/testdb/public/sales -c age,sex,city
+  $ pg search myconn/testdb/public/sales -c age,sex,city
+
   # or
-  	$ pg search myconn/testdb/public/sales -c age -c sex
+  $ pg search myconn/testdb/public/sales -c age -c sex
+
   # add where conditions
-  	$ pg search myconn/testdb/public/sales -f sex=M
+  $ pg search myconn/testdb/public/sales -f sex=M
+
+  # use like
+  $ pg search myconn/testdb/public/sales -f "name like test%"
 	`,
 	ValidArgsFunction: autocomplete.Path(4),
 	Run: func(cmd *cobra.Command, args []string) {
