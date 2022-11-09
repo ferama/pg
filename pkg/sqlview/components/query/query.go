@@ -26,14 +26,15 @@ type QueryResultsMsg struct {
 type Model struct {
 	path     *utils.PathParts
 	textarea textarea.Model
-	err      error
+
+	history *history
+	err     error
 }
 
 func New(path *utils.PathParts) *Model {
 	ta := textarea.New()
 	ta.Placeholder = "select ..."
 
-	// ta.Prompt = lipgloss.ThickBorder().Left + " "
 	ta.Prompt = ""
 
 	ta.SetWidth(10)
@@ -43,6 +44,7 @@ func New(path *utils.PathParts) *Model {
 	return &Model{
 		path:     path,
 		textarea: ta,
+		history:  newHistory(),
 		err:      nil,
 	}
 }
@@ -79,6 +81,8 @@ func (m *Model) sqlExecute(connString, dbName, schema, query string) (*db.QueryR
 func (m *Model) doQuery() tea.Cmd {
 	return func() tea.Msg {
 		query := m.value()
+
+		m.history.append(query)
 
 		results, err := m.sqlExecute(
 			m.path.ConfigConnection,
@@ -117,7 +121,15 @@ func (m *Model) Update(msg tea.Msg) (*Model, tea.Cmd) {
 	case tea.KeyMsg:
 		switch msg.Type {
 		case tea.KeyShiftDown:
+			q, err := m.history.getNext()
+			if err == nil {
+				m.textarea.SetValue(q)
+			}
 		case tea.KeyShiftUp:
+			q, err := m.history.getPrev()
+			if err == nil {
+				m.textarea.SetValue(q)
+			}
 		case tea.KeyCtrlD:
 			m.SetValue("")
 		case tea.KeyCtrlX:

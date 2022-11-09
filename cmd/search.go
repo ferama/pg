@@ -94,7 +94,7 @@ func init() {
 var searchCmd = &cobra.Command{
 	Use:   "search",
 	Args:  cobra.MinimumNArgs(1),
-	Short: "Display first table records",
+	Short: "Search tables for records",
 	Example: `
   # get only some columns
   $ pg search myconn/testdb/public/sales -c age,sex,city
