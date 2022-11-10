@@ -7,6 +7,8 @@ import (
 	"github.com/spf13/viper"
 )
 
+const ConfDir = ".pg"
+
 const (
 	SqlTextareaHeight = 8
 	ColorBlur         = "#ffffff"

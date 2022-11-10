@@ -9,9 +9,14 @@ import (
 	"os/user"
 	"path/filepath"
 	"sync"
+
+	"github.com/ferama/pg/pkg/conf"
 )
 
-const maxSize = 100
+const (
+	maxSize     = 100
+	historyFile = "history.db"
+)
 
 var (
 	once     sync.Once
@@ -19,7 +24,7 @@ var (
 )
 
 type toFile struct {
-	Items []string `json:"items"`
+	Items []string `yaml:"items"`
 }
 
 type History struct {
@@ -55,7 +60,7 @@ func (h *History) save() {
 		os.Exit(1)
 	}
 	usr, _ := user.Current()
-	historyFile := filepath.Join(usr.HomeDir, ".pg", "history.json")
+	historyFile := filepath.Join(usr.HomeDir, conf.ConfDir, historyFile)
 	fi, err := os.Create(historyFile)
 	if err != nil {
 		fmt.Printf("%s", err)
@@ -67,10 +72,10 @@ func (h *History) save() {
 
 func (h *History) load() {
 	usr, _ := user.Current()
-	historyFile := filepath.Join(usr.HomeDir, ".pg", "history.json")
+	historyFile := filepath.Join(usr.HomeDir, conf.ConfDir, historyFile)
 	jsonFile, err := os.Open(historyFile)
 	if err != nil {
-		fmt.Println(err)
+		return
 	}
 	defer jsonFile.Close()
 

@@ -34,7 +34,7 @@ func NewMainView(path *utils.PathParts) *MainView {
 	queryView := query.New(path)
 
 	if path.TableName != "" {
-		query := fmt.Sprintf("select * from %s limit 10", path.TableName)
+		query := fmt.Sprintf("select *\nfrom %s\nlimit 10", path.TableName)
 
 		queryView.SetValue(query)
 	}

@@ -101,7 +101,7 @@ func (m *Model) setState() tea.Msg {
 	items := make([]list.Item, 0)
 	for idx := len(hitems) - 1; idx >= 0; idx-- {
 		i := hitems[idx]
-		i = strings.ReplaceAll(i, "\n", "")
+		i = strings.ReplaceAll(i, "\n", " ")
 		items = append(items, listItem{
 			Idx:   idx,
 			Value: i,

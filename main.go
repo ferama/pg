@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 
 	"github.com/ferama/pg/cmd"
+	"github.com/ferama/pg/pkg/conf"
 	"github.com/spf13/viper"
 )
 
@@ -15,7 +16,7 @@ func init() {
 	viper.SetConfigType("yaml")
 
 	usr, _ := user.Current()
-	homeConf := filepath.Join(usr.HomeDir, ".pg/")
+	homeConf := filepath.Join(usr.HomeDir, conf.ConfDir, "/")
 	viper.AddConfigPath(".")
 	viper.AddConfigPath(homeConf)
 
