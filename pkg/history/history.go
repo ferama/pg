@@ -13,8 +13,8 @@ var (
 )
 
 type History struct {
-	currentIndex int
-	list         []string
+	cursor int
+	list   []string
 
 	lock sync.Mutex
 }
@@ -28,8 +28,8 @@ func GetInstance() *History {
 
 func newHistory() *History {
 	return &History{
-		currentIndex: -1,
-		list:         make([]string, 0),
+		cursor: -1,
+		list:   make([]string, 0),
 	}
 }
 
@@ -46,38 +46,49 @@ func (h *History) Append(item string) {
 
 	if len(h.list)+1 > maxSize {
 		h.list = h.list[1:]
-		h.currentIndex--
+		h.cursor--
 	}
 
 	if len(h.list) > 0 {
-		if h.list[h.currentIndex] != item {
+		if h.list[h.cursor] != item {
 			h.list = append(h.list, item)
-			h.currentIndex++
+			h.cursor++
 		}
 	} else {
 		h.list = append(h.list, item)
-		h.currentIndex++
+		h.cursor++
 	}
 }
 
-func (h *History) GetPrev() (string, error) {
+// GetAdIdx returns the value at index without moving
+// the hisotry cursor
+func (h *History) GetAtIdx(idx int) (string, error) {
+	h.lock.Lock()
+	defer h.lock.Unlock()
+	if len(h.list) > idx {
+		return h.list[idx], nil
+	}
+	return "", errors.New("do not have element ad idx")
+}
+
+func (h *History) GoPrev() (string, error) {
 	h.lock.Lock()
 	defer h.lock.Unlock()
 
-	if h.currentIndex-1 >= 0 && len(h.list) > 0 {
-		h.currentIndex--
-		return h.list[h.currentIndex], nil
+	if h.cursor-1 >= 0 && len(h.list) > 0 {
+		h.cursor--
+		return h.list[h.cursor], nil
 	}
 	return "", errors.New("do not have prev element")
 }
 
-func (h *History) GetNext() (string, error) {
+func (h *History) GoNext() (string, error) {
 	h.lock.Lock()
 	defer h.lock.Unlock()
 
-	if h.currentIndex+1 < len(h.list) {
-		h.currentIndex++
-		return h.list[h.currentIndex], nil
+	if h.cursor+1 < len(h.list) {
+		h.cursor++
+		return h.list[h.cursor], nil
 	}
 	return "", errors.New("do not have next element")
 }

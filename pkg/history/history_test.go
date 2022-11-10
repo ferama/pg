@@ -10,12 +10,12 @@ func TestHistory(t *testing.T) {
 	h.Append("2")
 	h.Append("3")
 
-	_, err := h.GetNext()
+	_, err := h.GoNext()
 	if err == nil {
 		t.Fail()
 	}
 
-	p, err := h.GetPrev()
+	p, err := h.GoPrev()
 	if err != nil {
 		t.Fatal(err)
 	}

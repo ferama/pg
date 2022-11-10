@@ -81,6 +81,11 @@ func (m *MainView) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 
 	switch msg := msg.(type) {
+	case hbrowser.HBrowserSelectedMsg:
+		m.currentState = defaultState
+		cmd = m.setState()
+		cmds = append(cmds, cmd)
+
 	case tea.KeyMsg:
 		switch msg.Type {
 		case tea.KeyEsc:

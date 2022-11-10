@@ -7,6 +7,7 @@ import (
 	"github.com/ferama/pg/pkg/conf"
 	"github.com/ferama/pg/pkg/db"
 	"github.com/ferama/pg/pkg/history"
+	"github.com/ferama/pg/pkg/sqlview/components/hbrowser"
 	"github.com/ferama/pg/pkg/utils"
 )
 
@@ -117,22 +118,31 @@ func (m *Model) Update(msg tea.Msg) (*Model, tea.Cmd) {
 	var cmd tea.Cmd
 
 	switch msg := msg.(type) {
+	case hbrowser.HBrowserSelectedMsg:
+		q, err := m.history.GetAtIdx(msg.Idx)
+		if err == nil {
+			m.textarea.SetValue(q)
+		}
 	case tea.WindowSizeMsg:
 		m.textarea.SetWidth(msg.Width - 2)
+
 	case tea.KeyMsg:
 		switch msg.Type {
 		case tea.KeyShiftDown:
-			q, err := m.history.GetNext()
+			q, err := m.history.GoNext()
 			if err == nil {
 				m.textarea.SetValue(q)
 			}
+
 		case tea.KeyShiftUp:
-			q, err := m.history.GetPrev()
+			q, err := m.history.GoPrev()
 			if err == nil {
 				m.textarea.SetValue(q)
 			}
+
 		case tea.KeyCtrlD:
 			m.SetValue("")
+
 		case tea.KeyCtrlX:
 			cmd = func() tea.Msg {
 				return QueryStatusMsg{
