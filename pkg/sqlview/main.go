@@ -34,7 +34,7 @@ func NewMainView(path *utils.PathParts) *MainView {
 	queryView := query.New(path)
 
 	if path.TableName != "" {
-		query := fmt.Sprintf("SELECT *\nFROM %s\nLIMIT 10", path.TableName)
+		query := fmt.Sprintf("select * from %s limit 10", path.TableName)
 
 		queryView.SetValue(query)
 	}
@@ -92,7 +92,7 @@ func (m *MainView) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			cmd = m.setState()
 			cmds = append(cmds, cmd)
 
-		case tea.KeyCtrlH:
+		case tea.KeyCtrlO:
 			m.currentState = historyState
 			cmd = m.setState()
 			cmds = append(cmds, cmd)

@@ -1,24 +1,16 @@
 package hbrowser
 
 import (
+	"fmt"
+	"io"
+	"strings"
+
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/ferama/pg/pkg/conf"
 	"github.com/ferama/pg/pkg/history"
 )
-
-// https://github.com/charmbracelet/bubbletea/blob/master/examples/list-simple/main.go
-
-type HBrowserStatesMsg struct {
-}
-type listItem struct {
-	title, desc string
-}
-
-func (i listItem) Title() string       { return i.title }
-func (i listItem) Description() string { return i.desc }
-func (i listItem) FilterValue() string { return i.title }
 
 var (
 	borderStyle = lipgloss.ThickBorder()
@@ -30,7 +22,48 @@ var (
 		BorderBottom(true).
 		BorderForeground(lipgloss.Color(conf.ColorFocus)).
 		BorderStyle(borderStyle)
+
+	itemStyle          = lipgloss.NewStyle().PaddingLeft(2)
+	selectedItemStyle  = lipgloss.NewStyle().PaddingLeft(2).Foreground(lipgloss.Color("170"))
+	indexStyle         = lipgloss.NewStyle()
+	indexStyleSelected = lipgloss.NewStyle().Foreground(lipgloss.Color("170"))
 )
+
+// https://github.com/charmbracelet/bubbletea/blob/master/examples/list-simple/main.go
+
+type hBrowserStatesMsg struct {
+}
+
+type HBrowserSelectedMsg struct {
+	Idx int
+}
+
+type listItem struct {
+	Idx   int
+	Value string
+}
+
+func (i listItem) FilterValue() string { return i.Value }
+
+type itemDelegate struct{}
+
+func (d itemDelegate) Height() int                               { return 1 }
+func (d itemDelegate) Spacing() int                              { return 0 }
+func (d itemDelegate) Update(msg tea.Msg, m *list.Model) tea.Cmd { return nil }
+func (d itemDelegate) Render(w io.Writer, m list.Model, index int, itm list.Item) {
+	i, ok := itm.(listItem)
+	if !ok {
+		return
+	}
+
+	if index == m.Index() {
+		fmt.Fprint(w, indexStyleSelected.Render(fmt.Sprint(index+1)))
+		fmt.Fprint(w, selectedItemStyle.Render(fmt.Sprint(i.Value)))
+	} else {
+		fmt.Fprint(w, indexStyle.Render(fmt.Sprint(index+1)))
+		fmt.Fprint(w, itemStyle.Render(fmt.Sprint(i.Value)))
+	}
+}
 
 type Model struct {
 	err            error
@@ -53,15 +86,7 @@ func New() *Model {
 
 func (m *Model) setState() tea.Msg {
 
-	delegate := list.NewDefaultDelegate()
-
-	delegate.Styles.SelectedTitle.
-		BorderForeground(lipgloss.AdaptiveColor{Light: conf.ColorFocus, Dark: conf.ColorFocus}).
-		Foreground(lipgloss.AdaptiveColor{Light: conf.ColorFocus, Dark: conf.ColorFocus})
-	delegate.Styles.SelectedDesc.
-		BorderForeground(lipgloss.AdaptiveColor{Light: conf.ColorFocus, Dark: conf.ColorFocus})
-
-	delegate.ShowDescription = true
+	delegate := itemDelegate{}
 
 	listModel := list.New(make([]list.Item, 0), delegate, 0, 0)
 	listModel.DisableQuitKeybindings()
@@ -74,26 +99,28 @@ func (m *Model) setState() tea.Msg {
 	h := history.GetInstance()
 	hitems := h.GetList()
 	items := make([]list.Item, 0)
-	for _, i := range hitems {
+	for idx := len(hitems) - 1; idx >= 0; idx-- {
+		i := hitems[idx]
+		i = strings.ReplaceAll(i, "\n", "")
 		items = append(items, listItem{
-			title: i, desc: "",
+			Idx:   idx,
+			Value: i,
 		})
 	}
 
-	delegate.ShowDescription = false
 	listModel.SetDelegate(delegate)
 	listModel.SetItems(items)
 	listModel.Title = "Query History"
 
 	m.list = listModel
-	return HBrowserStatesMsg{}
+	return hBrowserStatesMsg{}
 }
 
 func (m *Model) setDimensions() {
 	style.Width(m.terminalWidth - 4)
-	style.Height(m.terminalHeight - 4)
+	style.Height(m.terminalHeight - 2)
 
-	m.list.SetSize(m.terminalWidth-4, m.terminalHeight-4)
+	m.list.SetSize(m.terminalWidth-4, m.terminalHeight-2)
 }
 
 func (m *Model) Init() tea.Cmd {
@@ -123,7 +150,7 @@ func (m *Model) Update(msg tea.Msg) (*Model, tea.Cmd) {
 		m.terminalWidth = msg.Width
 		m.setDimensions()
 
-	case HBrowserStatesMsg:
+	case hBrowserStatesMsg:
 		m.setDimensions()
 
 	case tea.KeyMsg:
@@ -132,11 +159,15 @@ func (m *Model) Update(msg tea.Msg) (*Model, tea.Cmd) {
 		}
 		switch msg.Type {
 		case tea.KeyEnter:
-			// i := m.list.SelectedItem()
-			// if i != nil {
-			// 	cmd = m.nextState(i.(listItem))
-			// 	cmds = append(cmds, cmd)
-			// }
+			i := m.list.SelectedItem()
+			idx := i.(listItem).Idx
+
+			cmd := func() tea.Msg {
+				return HBrowserSelectedMsg{
+					Idx: idx,
+				}
+			}
+			cmds = append(cmds, cmd)
 		}
 
 	case error:
