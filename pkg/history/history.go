@@ -1,7 +1,13 @@
 package history
 
 import (
+	"encoding/json"
 	"errors"
+	"fmt"
+	"io"
+	"os"
+	"os/user"
+	"path/filepath"
 	"sync"
 )
 
@@ -11,6 +17,10 @@ var (
 	once     sync.Once
 	instance *History
 )
+
+type toFile struct {
+	Items []string `json:"items"`
+}
 
 type History struct {
 	cursor int
@@ -22,6 +32,7 @@ type History struct {
 func GetInstance() *History {
 	once.Do(func() {
 		instance = newHistory()
+		instance.load()
 	})
 	return instance
 }
@@ -31,6 +42,46 @@ func newHistory() *History {
 		cursor: -1,
 		list:   make([]string, 0),
 	}
+}
+
+func (h *History) save() {
+	items := make([]string, len(h.list))
+	copy(items, h.list)
+
+	j := toFile{Items: items}
+	b, err := json.Marshal(j)
+	if err != nil {
+		fmt.Printf("%s", err)
+		os.Exit(1)
+	}
+	usr, _ := user.Current()
+	historyFile := filepath.Join(usr.HomeDir, ".pg", "history.json")
+	fi, err := os.Create(historyFile)
+	if err != nil {
+		fmt.Printf("%s", err)
+		os.Exit(1)
+	}
+	defer fi.Close()
+	fi.Write(b)
+}
+
+func (h *History) load() {
+	usr, _ := user.Current()
+	historyFile := filepath.Join(usr.HomeDir, ".pg", "history.json")
+	jsonFile, err := os.Open(historyFile)
+	if err != nil {
+		fmt.Println(err)
+	}
+	defer jsonFile.Close()
+
+	byteValue, _ := io.ReadAll(jsonFile)
+
+	var parsed toFile
+	json.Unmarshal(byteValue, &parsed)
+	h.list = make([]string, len(parsed.Items))
+	copy(h.list, parsed.Items)
+
+	h.cursor = 0
 }
 
 func (h *History) GetList() []string {
@@ -58,6 +109,7 @@ func (h *History) Append(item string) {
 		h.list = append(h.list, item)
 		h.cursor++
 	}
+	h.save()
 }
 
 // GetAdIdx returns the value at index without moving
