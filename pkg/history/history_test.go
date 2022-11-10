@@ -1,4 +1,4 @@
-package query
+package history
 
 import (
 	"testing"
@@ -6,16 +6,16 @@ import (
 
 func TestHistory(t *testing.T) {
 	h := newHistory()
-	h.append("1")
-	h.append("2")
-	h.append("3")
+	h.Append("1")
+	h.Append("2")
+	h.Append("3")
 
-	_, err := h.getNext()
+	_, err := h.GoNext()
 	if err == nil {
 		t.Fail()
 	}
 
-	p, err := h.getPrev()
+	p, err := h.GoPrev()
 	if err != nil {
 		t.Fatal(err)
 	}
