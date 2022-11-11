@@ -5,6 +5,7 @@ import (
 	"strings"
 	"text/tabwriter"
 
+	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/ferama/pg/pkg/components/table"
@@ -38,7 +39,8 @@ var (
 )
 
 type Model struct {
-	table table.Model
+	table           table.Model
+	detailsViewport viewport.Model
 
 	err            error
 	terminalHeight int
@@ -51,12 +53,14 @@ type Model struct {
 
 func New() *Model {
 	tbl := table.New(nil, 0, 0)
+	vp := viewport.New(0, 0)
 
 	return &Model{
-		focused:      false,
-		results:      nil,
-		currentState: defaultState,
-		table:        tbl,
+		focused:         false,
+		results:         nil,
+		currentState:    defaultState,
+		table:           tbl,
+		detailsViewport: vp,
 	}
 }
 
@@ -81,6 +85,7 @@ func (m *Model) Focus() {
 		BorderForeground(lipgloss.Color(conf.ColorFocus))
 
 	m.focused = true
+
 	m.table.Focus()
 }
 
@@ -130,6 +135,24 @@ func (m *Model) setDimensions() {
 
 	titleStyle.Width(m.terminalWidth - 2)
 	m.table.SetSize(m.terminalWidth-2, m.terminalHeight-(conf.SqlTextareaHeight+5))
+
+	m.detailsViewport.Width = m.terminalWidth - 2
+	m.detailsViewport.Height = m.terminalHeight - (conf.SqlTextareaHeight + 5)
+}
+
+func (m *Model) handleDetailsKeys(msg tea.Msg) {
+	if m.currentState != detailsState {
+		return
+	}
+	switch msg := msg.(type) {
+	case tea.KeyMsg:
+		switch msg.Type {
+		case tea.KeyDown:
+			m.detailsViewport.LineDown(1)
+		case tea.KeyUp:
+			m.detailsViewport.LineUp(1)
+		}
+	}
 }
 
 func (m *Model) Update(msg tea.Msg) (*Model, tea.Cmd) {
@@ -156,10 +179,12 @@ func (m *Model) Update(msg tea.Msg) (*Model, tea.Cmd) {
 		if !m.focused {
 			break
 		}
+		m.handleDetailsKeys(msg)
 		switch msg.Type {
 		case tea.KeyEnter:
 			m.currentState = detailsState
 		}
+
 	case error:
 		m.err = msg
 		return m, nil
@@ -192,12 +217,12 @@ func (m *Model) View() string {
 			fmt.Fprintln(tw, s)
 		}
 		tw.Flush()
-		return style.Render(
-			lipgloss.JoinVertical(lipgloss.Left,
-				titleStyle.Render("Item Details"),
-				sb.String(),
-			),
+		content := lipgloss.JoinVertical(lipgloss.Left,
+			titleStyle.Render("Item Details"),
+			sb.String(),
 		)
+		m.detailsViewport.SetContent(content)
+		return style.Render(m.detailsViewport.View())
 	}
 	return style.Render(
 		lipgloss.JoinVertical(lipgloss.Left,
