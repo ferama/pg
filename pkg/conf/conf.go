@@ -44,14 +44,27 @@ func GetDBConnURL(connName string) (string, error) {
 		log.Fatalf("unable to decode into struct, %v", err)
 	}
 
+	user := viper.GetString("user-override")
+	password := viper.GetString("password-override")
+	database := viper.GetString("database-override")
+
 	for _, i := range conf.Connections {
 		if i.Name == connName {
+			if user == "" {
+				user = i.User
+			}
+			if password == "" {
+				password = i.Password
+			}
+			if database == "" {
+				database = i.Database
+			}
 			url := fmt.Sprintf("postgres://%s:%s@%s:%d/%s",
-				i.User,
-				i.Password,
+				user,
+				password,
 				i.Host,
 				i.Port,
-				i.Database,
+				database,
 			)
 			return url, nil
 		}

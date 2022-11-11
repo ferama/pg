@@ -15,7 +15,7 @@ import (
 func init() {
 	rootCmd.AddCommand(lsCmd)
 
-	lsCmd.Flags().BoolP("details", "d", false, "include more details")
+	lsCmd.Flags().BoolP("more", "m", false, "include more details")
 }
 
 func listConnections() {
