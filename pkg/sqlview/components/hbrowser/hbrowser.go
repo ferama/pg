@@ -29,8 +29,6 @@ var (
 	indexStyleSelected = lipgloss.NewStyle().Foreground(lipgloss.Color("170"))
 )
 
-// https://github.com/charmbracelet/bubbletea/blob/master/examples/list-simple/main.go
-
 type hBrowserStatesMsg struct {
 }
 

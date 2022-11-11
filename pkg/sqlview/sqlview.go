@@ -92,6 +92,9 @@ func (m *MainView) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if m.currentState != defaultState {
 				m.currentState = defaultState
 			} else {
+				if m.resultsView.HandleEsc() {
+					break
+				}
 				return m, tea.Quit
 			}
 			cmd = m.setState()

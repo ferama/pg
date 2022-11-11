@@ -85,9 +85,10 @@ func (h *History) load() {
 	var parsed toFile
 	json.Unmarshal(byteValue, &parsed)
 	h.list = make([]string, len(parsed.Items))
+
 	copy(h.list, parsed.Items)
 
-	h.cursor = 0
+	h.cursor = len(h.list) - 1
 }
 
 func (h *History) GetList() []string {

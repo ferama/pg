@@ -1,7 +1,9 @@
 package results
 
 import (
+	"fmt"
 	"strings"
+	"text/tabwriter"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
@@ -9,6 +11,11 @@ import (
 	"github.com/ferama/pg/pkg/conf"
 	"github.com/ferama/pg/pkg/db"
 	"github.com/ferama/pg/pkg/sqlview/components/editor"
+)
+
+const (
+	defaultState int = iota
+	detailsState
 )
 
 var (
@@ -37,19 +44,35 @@ type Model struct {
 	terminalHeight int
 	terminalWidth  int
 	focused        bool
+	currentState   int
+
+	results *db.QueryResults
 }
 
 func New() *Model {
 	tbl := table.New(nil, 0, 0)
 
 	return &Model{
-		focused: false,
-		table:   tbl,
+		focused:      false,
+		results:      nil,
+		currentState: defaultState,
+		table:        tbl,
 	}
 }
 
 func (m *Model) Init() tea.Cmd {
 	return nil
+}
+
+func (m *Model) HandleEsc() bool {
+	if !m.focused {
+		return false
+	}
+	if m.currentState == detailsState {
+		m.currentState = defaultState
+		return true
+	}
+	return false
 }
 
 func (m *Model) Focus() {
@@ -75,6 +98,7 @@ func (m *Model) Blur() {
 }
 
 func (m *Model) setResults(results *db.QueryResults) {
+	m.results = results
 
 	upperCols := make(db.Columns, 0)
 	for _, c := range results.Columns {
@@ -114,6 +138,7 @@ func (m *Model) Update(msg tea.Msg) (*Model, tea.Cmd) {
 
 	switch msg := msg.(type) {
 	case editor.QueryStatusMsg:
+		m.currentState = defaultState
 		m.table = table.New([]string{"STATUS"}, 0, 0)
 		m.table.SetRows([]table.Row{
 			table.SimpleRow{msg.Content},
@@ -127,19 +152,53 @@ func (m *Model) Update(msg tea.Msg) (*Model, tea.Cmd) {
 		m.terminalHeight = msg.Height
 		m.terminalWidth = msg.Width
 		m.setDimensions()
-	// We handle errors just like any other message
+	case tea.KeyMsg:
+		if !m.focused {
+			break
+		}
+		switch msg.Type {
+		case tea.KeyEnter:
+			m.currentState = detailsState
+		}
 	case error:
 		m.err = msg
 		return m, nil
 	}
 
-	m.table, cmd = m.table.Update(msg)
-	cmds = append(cmds, cmd)
+	if m.currentState == defaultState {
+		m.table, cmd = m.table.Update(msg)
+		cmds = append(cmds, cmd)
+	}
 
 	return m, tea.Batch(cmds...)
 }
 
 func (m *Model) View() string {
+	hStyle := lipgloss.NewStyle().
+		PaddingLeft(2).
+		Bold(true)
+
+	if m.currentState == detailsState && m.results != nil {
+		idx := m.table.Cursor()
+		row := m.results.Rows[idx]
+
+		var sb strings.Builder
+		tw := &tabwriter.Writer{}
+		tw.Init(&sb, 0, 4, 2, ' ', 0)
+		for i, col := range m.results.Columns {
+			c := hStyle.Render(col)
+			r := row[i]
+			s := fmt.Sprintf("%s\t%s", c, r)
+			fmt.Fprintln(tw, s)
+		}
+		tw.Flush()
+		return style.Render(
+			lipgloss.JoinVertical(lipgloss.Left,
+				titleStyle.Render("Item Details"),
+				sb.String(),
+			),
+		)
+	}
 	return style.Render(
 		lipgloss.JoinVertical(lipgloss.Left,
 			titleStyle.Render("Query Results"),
