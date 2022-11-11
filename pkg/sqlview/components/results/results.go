@@ -200,8 +200,15 @@ func (m *Model) Update(msg tea.Msg) (*Model, tea.Cmd) {
 
 func (m *Model) View() string {
 	hStyle := lipgloss.NewStyle().
-		PaddingLeft(2).
 		Bold(true)
+
+	// https://www.ditig.com/256-colors-cheat-sheet
+	evenStyle := lipgloss.NewStyle().
+		Padding(0, 1, 0, 1).
+		Background(lipgloss.Color("236"))
+	oddStyle := lipgloss.NewStyle().
+		Padding(0, 1, 0, 1).
+		Background(lipgloss.Color("237"))
 
 	if m.currentState == detailsState && m.results != nil {
 		idx := m.table.Cursor()
@@ -210,13 +217,29 @@ func (m *Model) View() string {
 		var sb strings.Builder
 		tw := &tabwriter.Writer{}
 		tw.Init(&sb, 0, 4, 2, ' ', 0)
+
 		for i, col := range m.results.Columns {
 			c := hStyle.Render(col)
 			r := row[i]
-			s := fmt.Sprintf("%s\t%s", c, r)
+
+			lineStyle := evenStyle
+			if i%2 == 1 {
+				lineStyle = oddStyle
+			}
+
+			s := lipgloss.JoinHorizontal(lipgloss.Top,
+				c,
+				lineStyle.Render("\t"),
+				lineStyle.Render(r),
+				lineStyle.Render("\t"))
+
+			s = lineStyle.Render(s)
+
 			fmt.Fprintln(tw, s)
 		}
+
 		tw.Flush()
+
 		m.detailsViewport.SetContent(sb.String())
 		return style.Render(
 			lipgloss.JoinVertical(lipgloss.Left,
