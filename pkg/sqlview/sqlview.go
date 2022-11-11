@@ -88,7 +88,7 @@ func (m *MainView) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case tea.KeyMsg:
 		switch msg.Type {
-		case tea.KeyEsc:
+		case tea.KeyEsc, tea.KeyCtrlC:
 			if m.currentState != defaultState {
 				m.currentState = defaultState
 			} else {

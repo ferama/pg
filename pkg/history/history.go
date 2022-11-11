@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/user"
 	"path/filepath"
+	"strings"
 	"sync"
 
 	"github.com/ferama/pg/pkg/conf"
@@ -100,6 +101,13 @@ func (h *History) Append(item string) {
 	h.lock.Lock()
 	defer h.lock.Unlock()
 
+	item = strings.TrimSpace(item)
+	if item == "" {
+		return
+	}
+
+	// keep the size under control removing first element
+	// if size exeed max value
 	if len(h.list)+1 > maxSize {
 		h.list = h.list[1:]
 		h.cursor--
@@ -136,6 +144,7 @@ func (h *History) DeleteAtIdx(idx int) {
 		if h.cursor == idx && h.cursor-1 >= 0 {
 			h.cursor--
 		}
+		h.save()
 	}
 }
 
