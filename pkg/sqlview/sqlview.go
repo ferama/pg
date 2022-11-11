@@ -5,8 +5,8 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/ferama/pg/pkg/sqlview/components/editor"
 	"github.com/ferama/pg/pkg/sqlview/components/hbrowser"
-	"github.com/ferama/pg/pkg/sqlview/components/query"
 	"github.com/ferama/pg/pkg/sqlview/components/results"
 	"github.com/ferama/pg/pkg/sqlview/components/statusbar"
 	"github.com/ferama/pg/pkg/utils"
@@ -22,7 +22,7 @@ type MainView struct {
 	err  error
 
 	resultsView *results.Model
-	queryView   *query.Model
+	queryView   *editor.Model
 	statsuBar   *statusbar.Model
 
 	currentState int
@@ -31,7 +31,7 @@ type MainView struct {
 }
 
 func NewMainView(path *utils.PathParts) *MainView {
-	queryView := query.New(path)
+	queryView := editor.New(path)
 
 	if path.TableName != "" {
 		query := fmt.Sprintf("select *\nfrom %s\nlimit 10", path.TableName)

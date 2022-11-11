@@ -8,7 +8,7 @@ import (
 	"github.com/ferama/pg/pkg/components/table"
 	"github.com/ferama/pg/pkg/conf"
 	"github.com/ferama/pg/pkg/db"
-	"github.com/ferama/pg/pkg/sqlview/components/query"
+	"github.com/ferama/pg/pkg/sqlview/components/editor"
 )
 
 var (
@@ -113,14 +113,14 @@ func (m *Model) Update(msg tea.Msg) (*Model, tea.Cmd) {
 	var cmd tea.Cmd
 
 	switch msg := msg.(type) {
-	case query.QueryStatusMsg:
+	case editor.QueryStatusMsg:
 		m.table = table.New([]string{"STATUS"}, 0, 0)
 		m.table.SetRows([]table.Row{
 			table.SimpleRow{msg.Content},
 		})
 		m.setDimensions()
 
-	case query.QueryResultsMsg:
+	case editor.QueryResultsMsg:
 		m.setResults(msg.Results)
 
 	case tea.WindowSizeMsg:

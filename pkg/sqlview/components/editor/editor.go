@@ -1,4 +1,4 @@
-package query
+package editor
 
 import (
 	"github.com/charmbracelet/bubbles/textarea"
