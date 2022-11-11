@@ -2,6 +2,7 @@ package conf
 
 import (
 	"errors"
+	"fmt"
 	"log"
 
 	"github.com/spf13/viper"
@@ -45,7 +46,14 @@ func GetDBConnURL(connName string) (string, error) {
 
 	for _, i := range conf.Connections {
 		if i.Name == connName {
-			return i.Url, nil
+			url := fmt.Sprintf("postgres://%s:%s@%s:%d/%s",
+				i.User,
+				i.Password,
+				i.Host,
+				i.Port,
+				i.Database,
+			)
+			return url, nil
 		}
 	}
 	return "", errors.New("conn string not found in config")

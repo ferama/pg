@@ -1,5 +1,12 @@
 connections:
   - name: db1
-    url: postgres://user1:pass1@host1:5432
+    user: postgres
+    password: password1
+    host: host1
+    port: 5432
   - name: db2
-    url: postgres://user2:pass2@host2:5432
+    user: postgres
+    password: password2
+    host: host1
+    port: 5432
+    database: mydb2
