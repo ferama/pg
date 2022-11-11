@@ -128,6 +128,17 @@ func (h *History) GetAtIdx(idx int) (string, error) {
 	return "", errors.New("do not have element ad idx")
 }
 
+func (h *History) DeleteAtIdx(idx int) {
+	h.lock.Lock()
+	defer h.lock.Unlock()
+	if len(h.list) > idx {
+		h.list = append(h.list[:idx], h.list[idx+1:]...)
+		if h.cursor == idx && h.cursor-1 >= 0 {
+			h.cursor--
+		}
+	}
+}
+
 func (h *History) GoPrev() (string, error) {
 	h.lock.Lock()
 	defer h.lock.Unlock()

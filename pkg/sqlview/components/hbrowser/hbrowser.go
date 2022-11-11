@@ -158,6 +158,14 @@ func (m *Model) Update(msg tea.Msg) (*Model, tea.Cmd) {
 			break
 		}
 		switch msg.Type {
+		case tea.KeyBackspace:
+			i := m.list.SelectedItem()
+			idx := i.(listItem).Idx
+			h := history.GetInstance()
+			h.DeleteAtIdx(idx)
+
+			cmd = m.setState
+			cmds = append(cmds, cmd)
 		case tea.KeyEnter:
 			i := m.list.SelectedItem()
 			idx := i.(listItem).Idx
