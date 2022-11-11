@@ -217,12 +217,13 @@ func (m *Model) View() string {
 			fmt.Fprintln(tw, s)
 		}
 		tw.Flush()
-		content := lipgloss.JoinVertical(lipgloss.Left,
-			titleStyle.Render("Item Details"),
-			sb.String(),
+		m.detailsViewport.SetContent(sb.String())
+		return style.Render(
+			lipgloss.JoinVertical(lipgloss.Left,
+				titleStyle.Render("Item Details"),
+				m.detailsViewport.View(),
+			),
 		)
-		m.detailsViewport.SetContent(content)
-		return style.Render(m.detailsViewport.View())
 	}
 	return style.Render(
 		lipgloss.JoinVertical(lipgloss.Left,
