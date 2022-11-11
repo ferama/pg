@@ -3,7 +3,6 @@ package table
 import (
 	"fmt"
 	"io"
-	"regexp"
 	"strings"
 	"unicode"
 
@@ -13,7 +12,6 @@ import (
 	"github.com/charmbracelet/lipgloss"
 	"github.com/ferama/pg/pkg/conf"
 	"github.com/juju/ansiterm/tabwriter"
-	"github.com/muesli/reflow/ansi"
 )
 
 // Row renderer.
@@ -31,9 +29,12 @@ type SimpleRow []any
 
 // Render a simple row.
 func (row SimpleRow) Render(w io.Writer, model Model, index int) {
-	cells := make([]string, len(row))
+	cells := make([]string, 0)
 	for i, v := range row {
-		cells[i] = model.Styles.Cell.Render(fmt.Sprintf("%v", v))
+		if i < model.colCursor {
+			continue
+		}
+		cells = append(cells, model.Styles.Cell.Render(fmt.Sprintf("%v", v)))
 	}
 	s := strings.Join(cells, "\t")
 
@@ -55,6 +56,7 @@ func New(cols []string, width, height int) Model {
 		focused:   false,
 		cols:      cols,
 		header:    strings.Join(cols, " "), // simple initial header view without tabwriter.
+		colCursor: 0,
 		viewPort:  vp,
 		tabWriter: tw,
 	}
@@ -79,7 +81,7 @@ type Model struct {
 	viewPort     viewport.Model
 	tabWriter    *tabwriter.Writer
 	cursor       int
-	offset       uint
+	colCursor    int
 	contentWidth int
 }
 
@@ -206,9 +208,12 @@ func (m *Model) updateView() {
 	var b strings.Builder
 	m.tabWriter.Init(&b, 0, 4, 1, ' ', 0)
 
-	cols := make([]string, len(m.cols))
+	cols := make([]string, 0)
 	for i, c := range m.cols {
-		cols[i] = m.Styles.HeaderCell.Render(c)
+		if i < m.colCursor {
+			continue
+		}
+		cols = append(cols, m.Styles.HeaderCell.Render(c))
 	}
 	// rendering the header.
 	s := strings.Join(cols, "\t")
@@ -224,10 +229,6 @@ func (m *Model) updateView() {
 
 	content := b.String()
 	m.contentWidth = lipgloss.Width(content)
-
-	if m.offset > 0 {
-		content = truncateOffset(content, m.offset)
-	}
 
 	// split table at first line-break to take header and rows apart.
 	parts := strings.SplitN(content, "\n", 2)
@@ -351,20 +352,18 @@ func (m *Model) GoBottom() {
 }
 
 func (m *Model) GoRight() {
-	if uint(m.viewPort.Width)+m.offset >= uint(m.contentWidth) {
+	if m.colCursor+1 >= len(m.cols) {
 		return
 	}
-
-	m.offset++
+	m.colCursor++
 	m.updateView()
 }
 
 func (m *Model) GoLeft() {
-	if m.offset == 0 {
+	if m.colCursor-1 < 0 {
 		return
 	}
-
-	m.offset--
+	m.colCursor--
 	m.updateView()
 }
 
@@ -408,55 +407,4 @@ func (m Model) View() string {
 			m.viewPort.View(),
 		),
 	)
-}
-
-var reANSISeq = regexp.MustCompile("^[\u001B\u009B][[\\]()#;?]*(?:(?:(?:[a-zA-Z\\d]*(?:;[a-zA-Z\\d]*)*)?\u0007)|(?:(?:\\d{1,4}(?:;\\d{0,4})*)?[\\dA-PRZcf-ntqry=><~]))")
-
-// truncateOffset trucates the beginning of the given block of text.
-// It handles more than 1 cell wide charaters
-// and preserves ANSI escape sequences.
-//
-// TODO: find a better way to keep ANSI escape sequences
-// than having to use regexp to remove them, trim the line
-// and restore them at the end.
-func truncateOffset(s string, offset uint) string {
-	if offset == 0 {
-		return s
-	}
-
-	var buf strings.Builder
-	lines := strings.Split(s, "\n")
-	last := len(lines) - 1
-	for i, s := range lines {
-		ansiSeq := reANSISeq.FindString(s)
-		if ansiSeq != "" {
-			s = strings.Replace(s, ansiSeq, "", 1)
-		}
-
-		var cutset, spaces, chars uint
-		for _, r := range s {
-			w := ansi.PrintableRuneWidth(string(r))
-			if w < 0 {
-				continue
-			}
-
-			cutset += uint(w)
-			chars++
-
-			if cutset >= offset {
-				spaces = cutset - offset
-				break
-			}
-		}
-
-		line := strings.Repeat(" ", int(spaces)) + string([]rune(s)[chars:])
-		if ansiSeq != "" {
-			line = ansiSeq + line
-		}
-		buf.WriteString(line)
-		if i != last {
-			buf.WriteRune('\n')
-		}
-	}
-	return buf.String()
 }
