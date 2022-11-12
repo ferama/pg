@@ -205,10 +205,13 @@ func (m *Model) View() string {
 	// https://www.ditig.com/256-colors-cheat-sheet
 	evenStyle := lipgloss.NewStyle().
 		Padding(0, 1, 0, 1).
-		Background(lipgloss.Color("236"))
+		Background(lipgloss.Color("235"))
 	oddStyle := lipgloss.NewStyle().
 		Padding(0, 1, 0, 1).
-		Background(lipgloss.Color("237"))
+		Background(lipgloss.Color("239"))
+
+	lineStyle := lipgloss.NewStyle().
+		Width(m.terminalWidth - 4)
 
 	if m.currentState == detailsState && m.results != nil {
 		idx := m.table.Cursor()
@@ -222,17 +225,18 @@ func (m *Model) View() string {
 			c := hStyle.Render(col)
 			r := row[i]
 
-			lineStyle := evenStyle
+			cellStyle := evenStyle
 			if i%2 == 1 {
-				lineStyle = oddStyle
+				cellStyle = oddStyle
 			}
 
 			s := lipgloss.JoinHorizontal(lipgloss.Top,
 				c,
-				lineStyle.Render("\t"),
-				lineStyle.Render(r),
-				lineStyle.Render("\t"))
+				cellStyle.Render("\t"),
+				cellStyle.Render(r),
+				cellStyle.Render("\t"))
 
+			lineStyle.Background(cellStyle.GetBackground())
 			s = lineStyle.Render(s)
 
 			fmt.Fprintln(tw, s)

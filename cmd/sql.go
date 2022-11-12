@@ -21,7 +21,7 @@ var sqlCmd = &cobra.Command{
 	Use:               "sql",
 	Args:              cobra.MinimumNArgs(1),
 	Short:             "Run sql query",
-	ValidArgsFunction: autocomplete.Path(3),
+	ValidArgsFunction: autocomplete.Path(4),
 	Run: func(cmd *cobra.Command, args []string) {
 		path := utils.ParsePath(args[0], false)
 
