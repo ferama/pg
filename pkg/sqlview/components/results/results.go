@@ -201,7 +201,7 @@ func (m *Model) Update(msg tea.Msg) (*Model, tea.Cmd) {
 func (m *Model) View() string {
 	if m.currentState == detailsState && m.results != nil {
 
-		m.detailsViewport.SetContent(m.renderLine())
+		m.detailsViewport.SetContent(m.renderDetails())
 		return style.Render(
 			lipgloss.JoinVertical(lipgloss.Left,
 				titleStyle.Render("Item Details"),
@@ -217,7 +217,7 @@ func (m *Model) View() string {
 	)
 }
 
-func (m *Model) renderLine() string {
+func (m *Model) renderDetails() string {
 	hStyle := lipgloss.NewStyle().
 		Bold(true)
 	lineStyle := lipgloss.NewStyle().
