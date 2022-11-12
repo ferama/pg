@@ -199,52 +199,9 @@ func (m *Model) Update(msg tea.Msg) (*Model, tea.Cmd) {
 }
 
 func (m *Model) View() string {
-	hStyle := lipgloss.NewStyle().
-		Bold(true)
-
-	// https://www.ditig.com/256-colors-cheat-sheet
-	evenStyle := lipgloss.NewStyle().
-		Padding(0, 1, 0, 1).
-		Background(lipgloss.Color("235"))
-	oddStyle := lipgloss.NewStyle().
-		Padding(0, 1, 0, 1).
-		Background(lipgloss.Color("239"))
-
-	lineStyle := lipgloss.NewStyle().
-		Width(m.terminalWidth - 4)
-
 	if m.currentState == detailsState && m.results != nil {
-		idx := m.table.Cursor()
-		row := m.results.Rows[idx]
 
-		var sb strings.Builder
-		tw := &tabwriter.Writer{}
-		tw.Init(&sb, 0, 4, 2, ' ', 0)
-
-		for i, col := range m.results.Columns {
-			c := hStyle.Render(col)
-			r := row[i]
-
-			cellStyle := evenStyle
-			if i%2 == 1 {
-				cellStyle = oddStyle
-			}
-
-			s := lipgloss.JoinHorizontal(lipgloss.Top,
-				c,
-				cellStyle.Render("\t"),
-				cellStyle.Render(r),
-				cellStyle.Render("\t"))
-
-			lineStyle.Background(cellStyle.GetBackground())
-			s = lineStyle.Render(s)
-
-			fmt.Fprintln(tw, s)
-		}
-
-		tw.Flush()
-
-		m.detailsViewport.SetContent(sb.String())
+		m.detailsViewport.SetContent(m.renderLine())
 		return style.Render(
 			lipgloss.JoinVertical(lipgloss.Left,
 				titleStyle.Render("Item Details"),
@@ -258,4 +215,74 @@ func (m *Model) View() string {
 			m.table.View(),
 		),
 	)
+}
+
+func (m *Model) renderLine() string {
+	hStyle := lipgloss.NewStyle().
+		Bold(true)
+	lineStyle := lipgloss.NewStyle().
+		PaddingLeft(1).
+		Width(m.terminalWidth - 4)
+	// https://www.ditig.com/256-colors-cheat-sheet
+	evenStyle := lipgloss.NewStyle().
+		Padding(0, 1, 0, 1).
+		Align(lipgloss.Left).
+		Background(lipgloss.Color("235"))
+	oddStyle := lipgloss.NewStyle().
+		Padding(0, 1, 0, 1).
+		Align(lipgloss.Left).
+		Background(lipgloss.Color("239"))
+
+	idx := m.table.Cursor()
+	row := m.results.Rows[idx]
+
+	var sb strings.Builder
+	tw := &tabwriter.Writer{}
+	tw.Init(&sb, 0, 4, 2, ' ', 0)
+
+	for i, rawColumn := range m.results.Columns {
+		cell := row[i]
+		cellWidth := lipgloss.Width(cell)
+
+		cellStyle := evenStyle
+		if i%2 == 1 {
+			cellStyle = oddStyle
+		}
+		parts := make([]string, 0)
+		if cellWidth > m.terminalWidth {
+			sliceLen := int(m.terminalWidth / 2)
+			i := 0
+			for {
+				if (i+1)*sliceLen >= cellWidth {
+					break
+				}
+				part := cell[i*sliceLen : (i+1)*sliceLen]
+				parts = append(parts, part)
+				i++
+			}
+			parts = append(parts, cell[i*sliceLen:])
+		} else {
+			parts = append(parts, cell)
+		}
+
+		for i, part := range parts {
+			col := rawColumn
+			if i != 0 {
+				col = strings.Repeat(" ", len(rawColumn))
+			}
+			s := lipgloss.JoinHorizontal(lipgloss.Top,
+				hStyle.Render(col),
+				cellStyle.Render("\t"),
+				cellStyle.Render(part),
+				cellStyle.Render("\t"))
+
+			lineStyle.Background(cellStyle.GetBackground())
+			s = lineStyle.Render(s)
+
+			fmt.Fprintln(tw, s)
+		}
+	}
+	tw.Flush()
+
+	return sb.String()
 }
