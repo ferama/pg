@@ -154,7 +154,6 @@ func (m *Model) Update(msg tea.Msg) (*Model, tea.Cmd) {
 			cmd = m.doQuery()
 			cmds = append(cmds, cmd)
 		}
-	// We handle errors just like any other message
 	case error:
 		m.err = msg
 		return m, nil

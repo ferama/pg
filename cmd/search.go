@@ -80,7 +80,7 @@ func searchTable(
 		fmt.Println(err)
 		os.Exit(1)
 	}
-	db.PrintQueryResults(results)
+	db.PrintQueryResults(results, true)
 }
 
 func init() {

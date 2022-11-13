@@ -50,7 +50,7 @@ func listDatabases(connString string) {
 		fmt.Println(err)
 		os.Exit(1)
 	}
-	db.PrintQueryResults(results)
+	db.PrintQueryResults(results, false)
 }
 
 func listSchemas(connString string, dbName string) {
@@ -64,7 +64,7 @@ func listSchemas(connString string, dbName string) {
 		fmt.Println(err)
 		os.Exit(1)
 	}
-	db.PrintQueryResults(results)
+	db.PrintQueryResults(results, false)
 }
 
 func listTables(connString string, dbName string, schema string, details bool) {
@@ -80,7 +80,7 @@ func listTables(connString string, dbName string, schema string, details bool) {
 		fmt.Println(err)
 		os.Exit(1)
 	}
-	db.PrintQueryResults(results)
+	db.PrintQueryResults(results, false)
 
 	if details {
 		query = fmt.Sprintf(`
@@ -95,7 +95,7 @@ func listTables(connString string, dbName string, schema string, details bool) {
 			fmt.Println(err)
 			os.Exit(1)
 		}
-		db.PrintQueryResults(results)
+		db.PrintQueryResults(results, false)
 	}
 }
 
@@ -126,7 +126,7 @@ func listTableDetails(connString, dbName, schema, tableName string, details bool
 		fmt.Println(err)
 		os.Exit(1)
 	}
-	db.PrintQueryResults(results)
+	db.PrintQueryResults(results, false)
 
 	if details {
 		// Indexes
@@ -142,7 +142,7 @@ func listTableDetails(connString, dbName, schema, tableName string, details bool
 			fmt.Println(err)
 			os.Exit(1)
 		}
-		db.PrintQueryResults(results)
+		db.PrintQueryResults(results, false)
 
 		// constraints
 		query = fmt.Sprintf(`
@@ -166,7 +166,7 @@ func listTableDetails(connString, dbName, schema, tableName string, details bool
 			fmt.Println(err)
 			os.Exit(1)
 		}
-		db.PrintQueryResults(results)
+		db.PrintQueryResults(results, false)
 	}
 
 }

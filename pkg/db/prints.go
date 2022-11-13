@@ -8,12 +8,12 @@ import (
 	"github.com/ferama/pg/pkg/conf"
 )
 
-func PrintQueryResults(results *QueryResults) {
-	res := RenderQueryResults(results)
+func PrintQueryResults(results *QueryResults, truncate bool) {
+	res := RenderQueryResults(results, truncate)
 	fmt.Printf("\n%s\n\n", res)
 }
 
-func RenderQueryResults(results *QueryResults) string {
+func RenderQueryResults(results *QueryResults, truncate bool) string {
 
 	var upper []string
 	for _, c := range results.Columns {
@@ -26,7 +26,7 @@ func RenderQueryResults(results *QueryResults) string {
 		var tr table.SimpleRow
 		for _, item := range row {
 			out := item
-			if len(out) > conf.ItemMaxLen {
+			if len(out) > conf.ItemMaxLen && truncate {
 				out = out[:conf.ItemMaxLen] + "..."
 			}
 			tr = append(tr, out)
