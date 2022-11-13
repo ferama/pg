@@ -25,7 +25,7 @@ var sqlCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		path := utils.ParsePath(args[0], false)
 
-		if path.SchemaName != "" || path.DatabaseName != "" {
+		if path.DatabaseName != "" {
 			model := sqlview.NewMainView(path)
 			p := tea.NewProgram(model)
 
@@ -34,7 +34,7 @@ var sqlCmd = &cobra.Command{
 			}
 
 		} else {
-			fmt.Fprintf(os.Stderr, "database and schema not provided")
+			fmt.Fprintf(os.Stderr, "database not provided")
 			os.Exit(1)
 		}
 	},
