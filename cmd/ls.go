@@ -184,7 +184,7 @@ var lsCmd = &cobra.Command{
 			return
 		}
 
-		showDetails, _ := cmd.Flags().GetBool("details")
+		showDetails, _ := cmd.Flags().GetBool("more")
 
 		path := utils.ParsePath(args[0], false)
 
