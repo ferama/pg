@@ -115,10 +115,10 @@ func (m *Model) setState() tea.Msg {
 }
 
 func (m *Model) setDimensions() {
-	style.Width(m.terminalWidth - 4)
+	style.Width(m.terminalWidth - 2)
 	style.Height(m.terminalHeight - 2)
 
-	m.list.SetSize(m.terminalWidth-4, m.terminalHeight-2)
+	m.list.SetSize(m.terminalWidth-2, m.terminalHeight-2)
 }
 
 func (m *Model) Init() tea.Cmd {
