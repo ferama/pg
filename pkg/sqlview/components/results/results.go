@@ -115,7 +115,9 @@ func (m *Model) setResults(results *db.QueryResults) {
 		row := table.SimpleRow{}
 		for _, v := range r {
 			out := v
-			if len(out) > conf.ItemMaxLen {
+			// do not truncate if the result contains just one colum
+			// Think about explain queries
+			if len(out) > conf.ItemMaxLen && len(results.Columns) > 1 {
 				out = out[:conf.ItemMaxLen] + "..."
 			}
 			row = append(row, out)

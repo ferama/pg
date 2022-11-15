@@ -17,7 +17,7 @@ const (
 	ColorHeader        = "#33aa66"
 	ColorTitle         = "#44bb77"
 	ColorTableRowFocus = "#33aa66"
-	ItemMaxLen         = 40
+	ItemMaxLen         = 50
 )
 
 func GetAvailableConnections() []string {
