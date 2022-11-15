@@ -15,18 +15,18 @@ import (
 
 var (
 	shortcutStyle = lipgloss.NewStyle().
-			Background(lipgloss.Color("#cccccc")).
-			Foreground(lipgloss.Color("#000000")).
+			Background(lipgloss.Color("#ccc")).
+			Foreground(lipgloss.Color("#000")).
 			Align(lipgloss.Right).
 			Border(lipgloss.ThickBorder(), false, true, false, false).
-			BorderForeground(lipgloss.Color(conf.ColorBlur))
+			BorderForeground(lipgloss.Color(conf.ColorFocus))
 
 	infoStyle = lipgloss.NewStyle().
-			Background(lipgloss.Color("#bbbbbb")).
-			Foreground(lipgloss.Color("#000000")).
+			Background(lipgloss.Color("#ccc")).
+			Foreground(lipgloss.Color("#000")).
 			Align(lipgloss.Left).
 			Border(lipgloss.ThickBorder(), false, false, false, true).
-			BorderForeground(lipgloss.Color(conf.ColorBlur))
+			BorderForeground(lipgloss.Color(conf.ColorFocus))
 )
 
 type connStatusUpdateMsg struct {
@@ -36,14 +36,26 @@ type Model struct {
 	path      *utils.PathParts
 	connected bool
 	lock      sync.Mutex
+
+	focused bool
 }
 
 func New(path *utils.PathParts) *Model {
 	m := &Model{
 		path:      path,
 		connected: false,
+
+		focused: true,
 	}
 	return m
+}
+
+func (m *Model) Focus() {
+	m.focused = true
+}
+
+func (m *Model) Blur() {
+	m.focused = false
 }
 
 func (m *Model) Init() tea.Cmd {
@@ -94,11 +106,10 @@ func (m *Model) Update(msg tea.Msg) (*Model, tea.Cmd) {
 }
 
 func (m *Model) View() string {
-	out := "<Ctrl+x> → execute・<ESC> → exit・"
+	out := "<Ctrl+o> → history・<Ctrl+x> → execute・<ESC> → exit・"
 
 	status := "connected"
 	connStatusStyle := lipgloss.NewStyle().
-		Background(lipgloss.Color(conf.ColorHeader)).
 		Bold(true)
 
 	if !m.connected {
@@ -112,6 +123,23 @@ func (m *Model) View() string {
 		m.path.DatabaseName,
 		m.path.SchemaName,
 	)
+
+	if m.focused {
+		infoStyle.
+			BorderForeground(lipgloss.Color(conf.ColorFocus)).
+			BorderStyle(lipgloss.ThickBorder())
+		shortcutStyle.
+			BorderForeground(lipgloss.Color(conf.ColorFocus)).
+			BorderStyle(lipgloss.ThickBorder())
+	} else {
+		infoStyle.
+			BorderForeground(lipgloss.Color(conf.ColorBlur)).
+			BorderStyle(lipgloss.NormalBorder())
+		shortcutStyle.
+			BorderForeground(lipgloss.Color(conf.ColorBlur)).
+			BorderStyle(lipgloss.NormalBorder())
+	}
+
 	r := lipgloss.JoinHorizontal(lipgloss.Left,
 		infoStyle.Render(connStatusStyle.Render(path)),
 		shortcutStyle.Render(out))

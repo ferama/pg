@@ -111,10 +111,12 @@ func (m *MainView) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case tea.KeyTab:
 			if m.resultsView.Focused() {
 				m.resultsView.Blur()
+				m.statsuBar.Focus()
 				cmd = m.queryView.Focus()
 				cmds = append(cmds, cmd)
 			} else {
 				m.resultsView.Focus()
+				m.statsuBar.Blur()
 				m.queryView.Blur()
 			}
 		}
