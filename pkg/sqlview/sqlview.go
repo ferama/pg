@@ -71,7 +71,12 @@ func (m *MainView) setState() tea.Cmd {
 }
 
 func (m *MainView) Init() tea.Cmd {
-	return tea.Batch(m.queryView.Init(), m.queryView.Focus(), tea.EnterAltScreen)
+	return tea.Batch(
+		m.queryView.Init(),
+		m.queryView.Focus(),
+		m.statsuBar.Init(),
+		tea.EnterAltScreen,
+	)
 }
 
 func (m *MainView) Update(msg tea.Msg) (tea.Model, tea.Cmd) {

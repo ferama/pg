@@ -8,6 +8,7 @@ require (
 	github.com/charmbracelet/lipgloss v0.5.0
 	github.com/jackc/pgx/v5 v5.0.0
 	github.com/juju/ansiterm v0.0.0-20210929141451-8b71cc96ebdc
+	github.com/muesli/reflow v0.3.0
 	github.com/spf13/cobra v1.6.0
 	github.com/spf13/viper v1.13.0
 )
@@ -29,7 +30,6 @@ require (
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
 	github.com/muesli/ansi v0.0.0-20211031195517-c9f0611b6c70 // indirect
 	github.com/muesli/cancelreader v0.2.2 // indirect
-	github.com/muesli/reflow v0.3.0 // indirect
 	github.com/muesli/termenv v0.12.0 // indirect
 	github.com/pelletier/go-toml v1.9.5 // indirect
 	github.com/pelletier/go-toml/v2 v2.0.5 // indirect
