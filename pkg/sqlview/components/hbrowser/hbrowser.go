@@ -3,6 +3,7 @@ package hbrowser
 import (
 	"fmt"
 	"io"
+	"regexp"
 	"strings"
 
 	"github.com/charmbracelet/bubbles/list"
@@ -10,6 +11,11 @@ import (
 	"github.com/charmbracelet/lipgloss"
 	"github.com/ferama/pg/pkg/conf"
 	"github.com/ferama/pg/pkg/history"
+	"github.com/muesli/reflow/truncate"
+)
+
+const (
+	ellipsis = "…"
 )
 
 var (
@@ -39,8 +45,10 @@ type HBrowserSelectedMsg struct {
 type listItem struct {
 	Idx   int
 	Value string
+	Desc  string
 }
 
+func (i listItem) Desciption() string  { return i.Desc }
 func (i listItem) FilterValue() string { return i.Value }
 
 type itemDelegate struct{}
@@ -54,12 +62,20 @@ func (d itemDelegate) Render(w io.Writer, m list.Model, index int, itm list.Item
 		return
 	}
 
+	value := i.Value
+
+	textwidth := uint(m.Width()) - 4
+
+	space := regexp.MustCompile(`\s+`)
+	value = space.ReplaceAllString(value, " ")
+	value = truncate.StringWithTail(value, textwidth, ellipsis)
+
 	if index == m.Index() {
 		fmt.Fprint(w, indexStyleSelected.Render(fmt.Sprint(index+1)))
-		fmt.Fprint(w, selectedItemStyle.Render(fmt.Sprint(i.Value)))
+		fmt.Fprint(w, selectedItemStyle.Render(fmt.Sprint(value)))
 	} else {
 		fmt.Fprint(w, indexStyle.Render(fmt.Sprint(index+1)))
-		fmt.Fprint(w, itemStyle.Render(fmt.Sprint(i.Value)))
+		fmt.Fprint(w, itemStyle.Render(fmt.Sprint(value)))
 	}
 }
 
@@ -106,7 +122,7 @@ func (m *Model) setState() tea.Msg {
 		})
 	}
 
-	listModel.SetDelegate(delegate)
+	// listModel.SetDelegate(delegate)
 	listModel.SetItems(items)
 	listModel.Title = "Query History"
 
