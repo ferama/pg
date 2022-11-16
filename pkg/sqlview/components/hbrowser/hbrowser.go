@@ -168,6 +168,9 @@ func (m *Model) Update(msg tea.Msg) (*Model, tea.Cmd) {
 	case hBrowserStatesMsg:
 		m.applySize()
 
+	case tea.WindowSizeMsg:
+		m.applySize()
+
 	case tea.KeyMsg:
 		if !m.focused {
 			break
