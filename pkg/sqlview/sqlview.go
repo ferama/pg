@@ -84,7 +84,8 @@ func (m *MainView) Init() tea.Cmd {
 }
 
 func (m *MainView) setDimensions() {
-	m.resultsView.SetDimensions(m.terminalWidth, m.terminalHeight-(conf.SqlTextareaHeight+5))
+	m.resultsView.SetSize(m.terminalWidth, m.terminalHeight-(conf.SqlTextareaHeight+5))
+	m.historyBrowser.SetSize(m.terminalWidth, m.terminalHeight)
 }
 
 func (m *MainView) Update(msg tea.Msg) (tea.Model, tea.Cmd) {

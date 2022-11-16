@@ -80,10 +80,11 @@ func (d itemDelegate) Render(w io.Writer, m list.Model, index int, itm list.Item
 }
 
 type Model struct {
-	err            error
-	focused        bool
-	terminalHeight int
-	terminalWidth  int
+	err     error
+	focused bool
+
+	height int
+	width  int
 
 	list list.Model
 }
@@ -130,11 +131,16 @@ func (m *Model) setState() tea.Msg {
 	return hBrowserStatesMsg{}
 }
 
-func (m *Model) setDimensions() {
-	style.Width(m.terminalWidth - 2)
-	style.Height(m.terminalHeight - 2)
+func (m *Model) SetSize(width, height int) {
+	m.width = width
+	m.height = height
+}
 
-	m.list.SetSize(m.terminalWidth-2, m.terminalHeight-2)
+func (m *Model) applySize() {
+	style.Width(m.width - 2)
+	style.Height(m.height - 2)
+
+	m.list.SetSize(m.width-2, m.height-2)
 }
 
 func (m *Model) Init() tea.Cmd {
@@ -159,13 +165,8 @@ func (m *Model) Update(msg tea.Msg) (*Model, tea.Cmd) {
 	var cmd tea.Cmd
 
 	switch msg := msg.(type) {
-	case tea.WindowSizeMsg:
-		m.terminalHeight = msg.Height
-		m.terminalWidth = msg.Width
-		m.setDimensions()
-
 	case hBrowserStatesMsg:
-		m.setDimensions()
+		m.applySize()
 
 	case tea.KeyMsg:
 		if !m.focused {

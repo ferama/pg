@@ -134,13 +134,13 @@ func (m *Model) setResults(results *db.QueryResults) {
 	m.table.SetRows(rs)
 }
 
-func (m *Model) SetDimensions(width, height int) {
+func (m *Model) SetSize(width, height int) {
 	m.width = width
 	m.height = height
-	m.applyDimensions()
+	m.applySize()
 }
 
-func (m *Model) applyDimensions() {
+func (m *Model) applySize() {
 	style.Width(m.width - 2)
 	style.Height(m.height - 2)
 
@@ -182,11 +182,11 @@ func (m *Model) Update(msg tea.Msg) (*Model, tea.Cmd) {
 		m.results = &db.QueryResults{
 			Elapsed: msg.Elapsed,
 		}
-		m.applyDimensions()
+		m.applySize()
 
 	case editor.QueryResultsMsg:
 		m.setResults(msg.Results)
-		m.applyDimensions()
+		m.applySize()
 
 	case tea.KeyMsg:
 		if !m.focused {
