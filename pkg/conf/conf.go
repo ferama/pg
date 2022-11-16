@@ -10,7 +10,7 @@ import (
 const ConfDir = ".pg"
 
 const (
-	SqlTextareaHeight = 8
+	SqlTextareaHeight = 12
 	ColorBlur         = "#ffffff"
 	ColorFocus        = "#77bbee"
 
