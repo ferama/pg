@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 	"text/tabwriter"
+	"time"
 
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
@@ -211,9 +212,13 @@ func (m *Model) View() string {
 			),
 		)
 	}
+	title := "Query Results"
+	if m.results != nil {
+		title = fmt.Sprintf("%s [%s]", title, m.results.Elapsed.Round(1*time.Millisecond))
+	}
 	return style.Render(
 		lipgloss.JoinVertical(lipgloss.Left,
-			titleStyle.Render("Query Results"),
+			titleStyle.Render(title),
 			m.table.View(),
 		),
 	)

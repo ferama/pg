@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"time"
 )
 
 type Columns []string
@@ -15,6 +16,7 @@ type Rows []Row
 type QueryResults struct {
 	Columns Columns
 	Rows    Rows
+	Elapsed time.Duration
 }
 
 // Returns a clean query without any comment statements
@@ -53,10 +55,12 @@ func Query(connString, dbName, schema, query string) (*QueryResults, error) {
 
 	action := strings.ToLower(strings.Split(query, " ")[0])
 	if action == "update" || action == "delete" {
+		start := time.Now()
 		res, err := conn.Exec(query)
 		if err != nil {
 			return nil, err
 		}
+		duration := time.Since(start)
 
 		affected, err := res.RowsAffected()
 		if err != nil {
@@ -66,13 +70,16 @@ func Query(connString, dbName, schema, query string) (*QueryResults, error) {
 		return &QueryResults{
 			Columns: Columns{"Rows Affected"},
 			Rows:    Rows{Row{fmt.Sprint(affected)}},
+			Elapsed: duration,
 		}, nil
 	}
 
+	start := time.Now()
 	rows, err := conn.Query(query)
 	if err != nil {
 		return nil, err
 	}
+	duration := time.Since(start)
 	defer rows.Close()
 
 	var out Rows
@@ -113,5 +120,6 @@ func Query(connString, dbName, schema, query string) (*QueryResults, error) {
 	return &QueryResults{
 		Columns: columns,
 		Rows:    out,
+		Elapsed: duration,
 	}, nil
 }
