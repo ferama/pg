@@ -37,17 +37,21 @@ var (
 			Foreground(lipgloss.Color(conf.ColorTitle)).
 			PaddingBottom(1).
 			Underline(true)
+
+	detailsRowStyle = lipgloss.NewStyle().
+			PaddingLeft(1)
 )
 
 type Model struct {
 	table           table.Model
 	detailsViewport viewport.Model
 
-	err            error
-	terminalHeight int
-	terminalWidth  int
-	focused        bool
-	currentState   int
+	height int
+	width  int
+
+	err          error
+	focused      bool
+	currentState int
 
 	results *db.QueryResults
 }
@@ -86,7 +90,6 @@ func (m *Model) Focus() {
 		BorderForeground(lipgloss.Color(conf.ColorFocus))
 
 	m.focused = true
-
 	m.table.Focus()
 }
 
@@ -129,18 +132,25 @@ func (m *Model) setResults(results *db.QueryResults) {
 	m.table = table.New(upperCols, 0, 0)
 
 	m.table.SetRows(rs)
-	m.setDimensions()
 }
 
-func (m *Model) setDimensions() {
-	style.Width(m.terminalWidth - 2)
-	style.Height(m.terminalHeight - (conf.SqlTextareaHeight + 3))
+func (m *Model) SetDimensions(width, height int) {
+	m.width = width
+	m.height = height
+	m.applyDimensions()
+}
 
-	titleStyle.Width(m.terminalWidth - 2)
-	m.table.SetSize(m.terminalWidth-2, m.terminalHeight-(conf.SqlTextareaHeight+5))
+func (m *Model) applyDimensions() {
+	style.Width(m.width - 2)
+	style.Height(m.height - 2)
 
-	m.detailsViewport.Width = m.terminalWidth - 2
-	m.detailsViewport.Height = m.terminalHeight - (conf.SqlTextareaHeight + 5)
+	detailsRowStyle.Width(m.width - 4)
+
+	titleStyle.Width(m.width - 2)
+	m.table.SetSize(m.width-2, m.height)
+
+	m.detailsViewport.Width = m.width - 2
+	m.detailsViewport.Height = m.height
 }
 
 func (m *Model) handleDetailsKeys(msg tea.Msg) {
@@ -169,15 +179,15 @@ func (m *Model) Update(msg tea.Msg) (*Model, tea.Cmd) {
 		m.table.SetRows([]table.Row{
 			table.SimpleRow{msg.Content},
 		})
-		m.setDimensions()
+		m.results = &db.QueryResults{
+			Elapsed: msg.Elapsed,
+		}
+		m.applyDimensions()
 
 	case editor.QueryResultsMsg:
 		m.setResults(msg.Results)
+		m.applyDimensions()
 
-	case tea.WindowSizeMsg:
-		m.terminalHeight = msg.Height
-		m.terminalWidth = msg.Width
-		m.setDimensions()
 	case tea.KeyMsg:
 		if !m.focused {
 			break
@@ -213,7 +223,7 @@ func (m *Model) View() string {
 		)
 	}
 	title := "Query Results"
-	if m.results != nil {
+	if m.results != nil && m.results.Elapsed != 0 {
 		title = fmt.Sprintf("%s [%s]", title, m.results.Elapsed.Round(1*time.Millisecond))
 	}
 	return style.Render(
@@ -227,9 +237,7 @@ func (m *Model) View() string {
 func (m *Model) renderDetails() string {
 	hStyle := lipgloss.NewStyle().
 		Bold(true)
-	lineStyle := lipgloss.NewStyle().
-		PaddingLeft(1).
-		Width(m.terminalWidth - 4)
+
 	// https://www.ditig.com/256-colors-cheat-sheet
 	evenStyle := lipgloss.NewStyle().
 		Padding(0, 1, 0, 1).
@@ -256,8 +264,9 @@ func (m *Model) renderDetails() string {
 			cellStyle = oddStyle
 		}
 		parts := make([]string, 0)
-		if cellWidth > m.terminalWidth {
-			sliceLen := int(m.terminalWidth / 2)
+
+		if cellWidth > m.width {
+			sliceLen := int(m.width / 2)
 			i := 0
 			for {
 				if (i+1)*sliceLen >= cellWidth {
@@ -283,8 +292,8 @@ func (m *Model) renderDetails() string {
 				cellStyle.Render(part),
 				cellStyle.Render("\t"))
 
-			lineStyle.Background(cellStyle.GetBackground())
-			s = lineStyle.Render(s)
+			detailsRowStyle.Background(cellStyle.GetBackground())
+			s = detailsRowStyle.Render(s)
 
 			fmt.Fprintln(tw, s)
 		}

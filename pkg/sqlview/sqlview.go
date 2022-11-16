@@ -5,6 +5,7 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/ferama/pg/pkg/conf"
 	"github.com/ferama/pg/pkg/sqlview/components/editor"
 	"github.com/ferama/pg/pkg/sqlview/components/hbrowser"
 	"github.com/ferama/pg/pkg/sqlview/components/results"
@@ -20,6 +21,9 @@ const (
 type MainView struct {
 	path *utils.PathParts
 	err  error
+
+	terminalHeight int
+	terminalWidth  int
 
 	resultsView *results.Model
 	queryView   *editor.Model
@@ -79,6 +83,10 @@ func (m *MainView) Init() tea.Cmd {
 	)
 }
 
+func (m *MainView) setDimensions() {
+	m.resultsView.SetDimensions(m.terminalWidth, m.terminalHeight-(conf.SqlTextareaHeight+5))
+}
+
 func (m *MainView) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmds []tea.Cmd
 	var cmd tea.Cmd
@@ -88,6 +96,11 @@ func (m *MainView) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.currentState = defaultState
 		cmd = m.setState()
 		cmds = append(cmds, cmd)
+
+	case tea.WindowSizeMsg:
+		m.terminalHeight = msg.Height
+		m.terminalWidth = msg.Width
+		m.setDimensions()
 
 	case tea.KeyMsg:
 		switch msg.Type {

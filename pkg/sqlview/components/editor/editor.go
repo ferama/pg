@@ -1,6 +1,8 @@
 package editor
 
 import (
+	"time"
+
 	"github.com/charmbracelet/bubbles/textarea"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
@@ -19,6 +21,7 @@ var (
 
 type QueryStatusMsg struct {
 	Content string
+	Elapsed time.Duration
 }
 
 type QueryResultsMsg struct {
@@ -99,7 +102,8 @@ func (m *Model) doQuery() tea.Cmd {
 		} else {
 			if len(results.Columns) == 0 {
 				return QueryStatusMsg{
-					"done",
+					Content: "done",
+					Elapsed: results.Elapsed,
 				}
 			} else {
 				return QueryResultsMsg{
