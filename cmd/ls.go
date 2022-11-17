@@ -68,12 +68,36 @@ func listSchemas(connString string, dbName string) {
 }
 
 func listTables(connString string, dbName string, schema string, details bool) {
+
+	filter := `
+		AND c.relkind IN ('r', 'v', 'p', 'm')
+	`
+	if details {
+		filter = ""
+	}
+
 	query := fmt.Sprintf(`
-		SELECT table_name as table, table_type as type
-		FROM information_schema.tables
-		WHERE table_schema = '%s' 
-		ORDER BY table_name
-		`, schema)
+		SELECT 
+			c.relname AS name,
+			CASE c.relkind
+				WHEN 'r' THEN 'TABLE'
+				WHEN 'i' THEN 'SECONDARY INDEX'
+				WHEN 'S' THEN 'SEQUENCE'
+				WHEN 'v' THEN 'VIEW'
+				WHEN 'm' THEN 'MATERIALIZED VIEW'
+				WHEN 'f' THEN 'FOREIGN TABLE'
+				WHEN 'p' THEN 'PARTITIONED TABLE'
+				WHEN 'I' THEN 'PARTITIONED INDEX'
+				WHEN 't' THEN 'OUT OF LINE VALUE'
+			END AS type,
+			pg_catalog.pg_get_userbyid(c.relowner) as owner,
+			pg_catalog.pg_size_pretty(pg_catalog.pg_table_size(c.oid)) as size
+ 		FROM pg_catalog.pg_class c
+ 		LEFT JOIN pg_catalog.pg_namespace n
+   			ON n.oid = c.relnamespace
+ 		WHERE n.nspname = '%s' %s
+		ORDER BY name, type
+	`, schema, filter)
 
 	results, err := db.Query(connString, dbName, "", query)
 	if err != nil {
@@ -81,22 +105,6 @@ func listTables(connString string, dbName string, schema string, details bool) {
 		os.Exit(1)
 	}
 	db.PrintQueryResults(results, false)
-
-	if details {
-		query = fmt.Sprintf(`
-			SELECT sequence_name as sequence
-			FROM information_schema.sequences
-			WHERE sequence_schema = '%s' 
-			ORDER BY sequence_name
-			`, schema)
-
-		results, err = db.Query(connString, dbName, "", query)
-		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
-		}
-		db.PrintQueryResults(results, false)
-	}
 }
 
 func listTableDetails(connString, dbName, schema, tableName string, details bool) {
