@@ -5,7 +5,7 @@ import (
 )
 
 func TestHistory(t *testing.T) {
-	h := newHistory()
+	h := GetInstance()
 	h.Append("1")
 	h.Append("2")
 	h.Append("3")

@@ -142,7 +142,7 @@ func (h *History) DeleteAtIdx(idx int) {
 	defer h.lock.Unlock()
 	if len(h.list) > idx {
 		h.list = append(h.list[:idx], h.list[idx+1:]...)
-		if h.cursor == idx && h.cursor-1 >= 0 {
+		if h.cursor-1 >= 0 {
 			h.cursor--
 		}
 		h.save()
