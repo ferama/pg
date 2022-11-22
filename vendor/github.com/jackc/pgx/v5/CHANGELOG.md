@@ -1,4 +1,48 @@
-# v5.0.0
+# 5.1.1 (November 17, 2022)
+
+* Fix simple query sanitizer where query text contains a Unicode replacement character.
+* Remove erroneous `name` argument from `DeallocateAll()`. Technically, this is a breaking change, but given that method was only added 5 days ago this change was accepted. (Bodo Kaiser)
+
+# 5.1.0 (November 12, 2022)
+
+* Update puddle to v2.1.2. This resolves a race condition and a deadlock in pgxpool.
+* `QueryRewriter.RewriteQuery` now returns an error. Technically, this is a breaking change for any external implementers, but given the minimal likelihood that there are actually any external implementers this change was accepted.
+* Expose `GetSSLPassword` support to pgx.
+* Fix encode `ErrorResponse` unknown field handling. This would only affect pgproto3 being used directly as a proxy with a non-PostgreSQL server that included additional error fields.
+* Fix date text format encoding with 5 digit years.
+* Fix date values passed to a `sql.Scanner` as `string` instead of `time.Time`.
+* DateCodec.DecodeValue can return `pgtype.InfinityModifier` instead of `string` for infinite values. This now matches the behavior of the timestamp types.
+* Add domain type support to `Conn.LoadType()`.
+* Add `RowToStructByName` and `RowToAddrOfStructByName`. (Pavlo Golub)
+* Add `Conn.DeallocateAll()` to clear all prepared statements including the statement cache. (Bodo Kaiser)
+
+# 5.0.4 (October 24, 2022)
+
+* Fix: CollectOneRow prefers PostgreSQL error over pgx.ErrorNoRows
+* Fix: some reflect Kind checks to first check for nil
+* Bump golang.org/x/text dependency to placate snyk
+* Fix: RowToStructByPos on structs with multiple anonymous sub-structs (Baptiste Fontaine)
+* Fix: Exec checks if tx is closed
+
+# 5.0.3 (October 14, 2022)
+
+* Fix `driver.Valuer` handling edge cases that could cause infinite loop or crash
+
+# v5.0.2 (October 8, 2022)
+
+* Fix date encoding in text format to always use 2 digits for month and day
+* Prefer driver.Valuer over wrap plans when encoding
+* Fix scan to pointer to pointer to renamed type
+* Allow scanning NULL even if PG and Go types are incompatible
+
+# v5.0.1 (September 24, 2022)
+
+* Fix 32-bit atomic usage
+* Add MarshalJSON for Float8 (yogipristiawan)
+* Add `[` and `]` to text encoding of `Lseg`
+* Fix sqlScannerWrapper NULL handling
+
+# v5.0.0 (September 17, 2022)
 
 ## Merged Packages
 
@@ -36,6 +80,9 @@ The `pgtype` package has been significantly changed.
 
 Previously, types had a `Status` field that could be `Undefined`, `Null`, or `Present`. This has been changed to a
 `Valid` `bool` field to harmonize with how `database/sql` represents `NULL` and to make the zero value useable.
+
+Previously, a type that implemented `driver.Valuer` would have the `Value` method called even on a nil pointer. All nils
+whether typed or untyped now represent `NULL`.
 
 ### Codec and Value Split
 

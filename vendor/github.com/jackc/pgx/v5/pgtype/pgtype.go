@@ -351,8 +351,8 @@ func NewMap() *Map {
 	registerDefaultPgTypeVariants[uint8](m, "int8")
 	registerDefaultPgTypeVariants[uint16](m, "int8")
 	registerDefaultPgTypeVariants[uint32](m, "int8")
-	registerDefaultPgTypeVariants[uint64](m, "int8")
-	registerDefaultPgTypeVariants[uint](m, "int8")
+	registerDefaultPgTypeVariants[uint64](m, "numeric")
+	registerDefaultPgTypeVariants[uint](m, "numeric")
 
 	registerDefaultPgTypeVariants[float32](m, "float4")
 	registerDefaultPgTypeVariants[float64](m, "float8")
@@ -558,6 +558,23 @@ type scanPlanFail struct {
 }
 
 func (plan *scanPlanFail) Scan(src []byte, dst any) error {
+	// If src is NULL it might be possible to scan into dst even though it is the types are not compatible. While this
+	// may seem to be a contrived case it can occur when selecting NULL directly. PostgreSQL assigns it the type of text.
+	// It would be surprising to the caller to have to cast the NULL (e.g. `select null::int`). So try to figure out a
+	// compatible data type for dst and scan with that.
+	//
+	// See https://github.com/jackc/pgx/issues/1326
+	if src == nil {
+		// As a horrible hack try all types to find anything that can scan into dst.
+		for oid := range plan.m.oidToType {
+			// using planScan instead of Scan or PlanScan to avoid polluting the planned scan cache.
+			plan := plan.m.planScan(oid, plan.formatCode, dst)
+			if _, ok := plan.(*scanPlanFail); !ok {
+				return plan.Scan(src, dst)
+			}
+		}
+	}
+
 	var format string
 	switch plan.formatCode {
 	case TextFormatCode:
@@ -659,7 +676,12 @@ func TryFindUnderlyingTypeScanPlan(dst any) (plan WrappedScanPlanNextSetter, nex
 	dstValue := reflect.ValueOf(dst)
 
 	if dstValue.Kind() == reflect.Ptr {
-		elemValue := dstValue.Elem()
+		var elemValue reflect.Value
+		if dstValue.IsNil() {
+			elemValue = reflect.New(dstValue.Type().Elem()).Elem()
+		} else {
+			elemValue = dstValue.Elem()
+		}
 		nextDstType := elemKindToPointerTypes[elemValue.Kind()]
 		if nextDstType == nil && elemValue.Kind() == reflect.Slice {
 			if elemValue.Type().Elem().Kind() == reflect.Uint8 {
@@ -1304,6 +1326,10 @@ func (m *Map) PlanEncode(oid uint32, format int16, value any) EncodePlan {
 		}
 	}
 
+	if _, ok := value.(driver.Valuer); ok {
+		return &encodePlanDriverValuer{m: m, oid: oid, formatCode: format}
+	}
+
 	return nil
 }
 
@@ -1326,6 +1352,55 @@ func (encodePlanTextValuerToAnyTextFormat) Encode(value any, buf []byte) (newBuf
 	}
 
 	return append(buf, t.String...), nil
+}
+
+type encodePlanDriverValuer struct {
+	m          *Map
+	oid        uint32
+	formatCode int16
+}
+
+func (plan *encodePlanDriverValuer) Encode(value any, buf []byte) (newBuf []byte, err error) {
+	dv := value.(driver.Valuer)
+	if dv == nil {
+		return nil, nil
+	}
+	v, err := dv.Value()
+	if err != nil {
+		return nil, err
+	}
+	if v == nil {
+		return nil, nil
+	}
+
+	newBuf, err = plan.m.Encode(plan.oid, plan.formatCode, v, buf)
+	if err == nil {
+		return newBuf, nil
+	}
+
+	s, ok := v.(string)
+	if !ok {
+		return nil, err
+	}
+
+	var scannedValue any
+	scanErr := plan.m.Scan(plan.oid, TextFormatCode, []byte(s), &scannedValue)
+	if scanErr != nil {
+		return nil, err
+	}
+
+	// Prevent infinite loop. We can't encode this. See https://github.com/jackc/pgx/issues/1331.
+	if reflect.TypeOf(value) == reflect.TypeOf(scannedValue) {
+		return nil, fmt.Errorf("tried to encode %v via encoding to text and scanning but failed due to receiving same type back", value)
+	}
+
+	var err2 error
+	newBuf, err2 = plan.m.Encode(plan.oid, BinaryFormatCode, scannedValue, buf)
+	if err2 != nil {
+		return nil, err
+	}
+
+	return newBuf, nil
 }
 
 // TryWrapEncodePlanFunc is a function that tries to create a wrapper plan for value. If successful it returns a plan
@@ -1353,7 +1428,11 @@ func (plan *derefPointerEncodePlan) Encode(value any, buf []byte) (newBuf []byte
 // TryWrapDerefPointerEncodePlan tries to dereference a pointer. e.g. If value was of type *string then a wrapper plan
 // would be returned that derefences the value.
 func TryWrapDerefPointerEncodePlan(value any) (plan WrappedEncodePlanNextSetter, nextValue any, ok bool) {
-	if valueType := reflect.TypeOf(value); valueType.Kind() == reflect.Ptr {
+	if _, ok := value.(driver.Valuer); ok {
+		return nil, nil, false
+	}
+
+	if valueType := reflect.TypeOf(value); valueType != nil && valueType.Kind() == reflect.Ptr {
 		return &derefPointerEncodePlan{}, reflect.New(valueType.Elem()).Elem().Interface(), true
 	}
 
@@ -1390,6 +1469,10 @@ func (plan *underlyingTypeEncodePlan) Encode(value any, buf []byte) (newBuf []by
 // TryWrapFindUnderlyingTypeEncodePlan tries to convert to a Go builtin type. e.g. If value was of type MyString and
 // MyString was defined as a string then a wrapper plan would be returned that converts MyString to string.
 func TryWrapFindUnderlyingTypeEncodePlan(value any) (plan WrappedEncodePlanNextSetter, nextValue any, ok bool) {
+	if _, ok := value.(driver.Valuer); ok {
+		return nil, nil, false
+	}
+
 	if _, ok := value.(SkipUnderlyingTypePlanner); ok {
 		return nil, nil, false
 	}
@@ -1413,6 +1496,10 @@ type WrappedEncodePlanNextSetter interface {
 // value was of type int32 then a wrapper plan would be returned that converts value to a type that implements
 // Int64Valuer.
 func TryWrapBuiltinTypeEncodePlan(value any) (plan WrappedEncodePlanNextSetter, nextValue any, ok bool) {
+	if _, ok := value.(driver.Valuer); ok {
+		return nil, nil, false
+	}
+
 	switch value := value.(type) {
 	case int8:
 		return &wrapInt8EncodePlan{}, int8Wrapper(value), true
@@ -1709,7 +1796,11 @@ func (plan *wrapFmtStringerEncodePlan) Encode(value any, buf []byte) (newBuf []b
 
 // TryWrapStructPlan tries to wrap a struct with a wrapper that implements CompositeIndexGetter.
 func TryWrapStructEncodePlan(value any) (plan WrappedEncodePlanNextSetter, nextValue any, ok bool) {
-	if reflect.TypeOf(value).Kind() == reflect.Struct {
+	if _, ok := value.(driver.Valuer); ok {
+		return nil, nil, false
+	}
+
+	if valueType := reflect.TypeOf(value); valueType != nil && valueType.Kind() == reflect.Struct {
 		exportedFields := getExportedFieldValues(reflect.ValueOf(value))
 		if len(exportedFields) == 0 {
 			return nil, nil, false
@@ -1754,6 +1845,10 @@ func getExportedFieldValues(structValue reflect.Value) []reflect.Value {
 }
 
 func TryWrapSliceEncodePlan(value any) (plan WrappedEncodePlanNextSetter, nextValue any, ok bool) {
+	if _, ok := value.(driver.Valuer); ok {
+		return nil, nil, false
+	}
+
 	// Avoid using reflect path for common types.
 	switch value := value.(type) {
 	case []int16:
@@ -1772,7 +1867,7 @@ func TryWrapSliceEncodePlan(value any) (plan WrappedEncodePlanNextSetter, nextVa
 		return &wrapSliceEncodePlan[time.Time]{}, (FlatArray[time.Time])(value), true
 	}
 
-	if reflect.TypeOf(value).Kind() == reflect.Slice {
+	if valueType := reflect.TypeOf(value); valueType != nil && valueType.Kind() == reflect.Slice {
 		w := anySliceArrayReflect{
 			slice: reflect.ValueOf(value),
 		}
@@ -1811,6 +1906,10 @@ func (plan *wrapSliceEncodeReflectPlan) Encode(value any, buf []byte) (newBuf []
 }
 
 func TryWrapMultiDimSliceEncodePlan(value any) (plan WrappedEncodePlanNextSetter, nextValue any, ok bool) {
+	if _, ok := value.(driver.Valuer); ok {
+		return nil, nil, false
+	}
+
 	sliceValue := reflect.ValueOf(value)
 	if sliceValue.Kind() == reflect.Slice {
 		valueElemType := sliceValue.Type().Elem()
@@ -1873,17 +1972,6 @@ func (m *Map) Encode(oid uint32, formatCode int16, value any, buf []byte) (newBu
 
 	plan := m.PlanEncode(oid, formatCode, value)
 	if plan == nil {
-		if dv, ok := value.(driver.Valuer); ok {
-			if dv == nil {
-				return nil, nil
-			}
-			v, err := dv.Value()
-			if err != nil {
-				return nil, err
-			}
-			return m.Encode(oid, formatCode, v, buf)
-		}
-
 		return nil, newEncodeError(value, m, oid, formatCode, errors.New("cannot find encode plan"))
 	}
 
@@ -1921,13 +2009,15 @@ func (w *sqlScannerWrapper) Scan(src any) error {
 	}
 
 	var bufSrc []byte
-	switch src := src.(type) {
-	case string:
-		bufSrc = []byte(src)
-	case []byte:
-		bufSrc = src
-	default:
-		bufSrc = []byte(fmt.Sprint(bufSrc))
+	if src != nil {
+		switch src := src.(type) {
+		case string:
+			bufSrc = []byte(src)
+		case []byte:
+			bufSrc = src
+		default:
+			bufSrc = []byte(fmt.Sprint(bufSrc))
+		}
 	}
 
 	return w.m.Scan(t.OID, TextFormatCode, bufSrc, w.v)

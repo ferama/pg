@@ -40,7 +40,7 @@ directly.
 
     var sum, n int32
     rows, _ := conn.Query(context.Background(), "select generate_series(1,$1)", 10)
-    _, err := pgx.ForEachRow(rows, []any{&n}, func(pgx.QueryFuncRow) error {
+    _, err := pgx.ForEachRow(rows, []any{&n}, func() error {
       sum += n
       return nil
     })
@@ -161,12 +161,14 @@ notification is received or the context is canceled.
 
     _, err := conn.Exec(context.Background(), "listen channelname")
     if err != nil {
-        return nil
+        return err
     }
 
-    if notification, err := conn.WaitForNotification(context.Background()); err != nil {
-        // do something with notification
+    notification, err := conn.WaitForNotification(context.Background())
+    if err != nil {
+        return err
     }
+    // do something with notification
 
 
 Tracing and Logging

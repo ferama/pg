@@ -42,6 +42,11 @@ type ConnConfig struct {
 	createdByParseConfig bool // Used to enforce created by ParseConfig rule.
 }
 
+// ParseConfigOptions contains options that control how a config is built such as getsslpassword.
+type ParseConfigOptions struct {
+	pgconn.ParseConfigOptions
+}
+
 // Copy returns a deep copy of the config that is safe to use and modify.
 // The only exception is the tls.Config:
 // according to the tls.Config docs it must not be modified after creation.
@@ -110,6 +115,16 @@ func Connect(ctx context.Context, connString string) (*Conn, error) {
 	return connect(ctx, connConfig)
 }
 
+// ConnectWithOptions behaves exactly like Connect with the addition of options. At the present options is only used to
+// provide a GetSSLPassword function.
+func ConnectWithOptions(ctx context.Context, connString string, options ParseConfigOptions) (*Conn, error) {
+	connConfig, err := ParseConfigWithOptions(connString, options)
+	if err != nil {
+		return nil, err
+	}
+	return connect(ctx, connConfig)
+}
+
 // ConnectConfig establishes a connection with a PostgreSQL server with a configuration struct.
 // connConfig must have been created by ParseConfig.
 func ConnectConfig(ctx context.Context, connConfig *ConnConfig) (*Conn, error) {
@@ -120,22 +135,10 @@ func ConnectConfig(ctx context.Context, connConfig *ConnConfig) (*Conn, error) {
 	return connect(ctx, connConfig)
 }
 
-// ParseConfig creates a ConnConfig from a connection string. ParseConfig handles all options that pgconn.ParseConfig
-// does. In addition, it accepts the following options:
-//
-//	default_query_exec_mode
-//		Possible values: "cache_statement", "cache_describe", "describe_exec", "exec", and "simple_protocol". See
-//		QueryExecMode constant documentation for the meaning of these values. Default: "cache_statement".
-//
-//	statement_cache_capacity
-//		The maximum size of the statement cache used when executing a query with "cache_statement" query exec mode.
-//		Default: 512.
-//
-//	description_cache_capacity
-//		The maximum size of the description cache used when executing a query with "cache_describe" query exec mode.
-//		Default: 512.
-func ParseConfig(connString string) (*ConnConfig, error) {
-	config, err := pgconn.ParseConfig(connString)
+// ParseConfigWithOptions behaves exactly as ParseConfig does with the addition of options. At the present options is
+// only used to provide a GetSSLPassword function.
+func ParseConfigWithOptions(connString string, options ParseConfigOptions) (*ConnConfig, error) {
+	config, err := pgconn.ParseConfigWithOptions(connString, options.ParseConfigOptions)
 	if err != nil {
 		return nil, err
 	}
@@ -189,6 +192,24 @@ func ParseConfig(connString string) (*ConnConfig, error) {
 	}
 
 	return connConfig, nil
+}
+
+// ParseConfig creates a ConnConfig from a connection string. ParseConfig handles all options that pgconn.ParseConfig
+// does. In addition, it accepts the following options:
+//
+//	default_query_exec_mode
+//		Possible values: "cache_statement", "cache_describe", "describe_exec", "exec", and "simple_protocol". See
+//		QueryExecMode constant documentation for the meaning of these values. Default: "cache_statement".
+//
+//	statement_cache_capacity
+//		The maximum size of the statement cache used when executing a query with "cache_statement" query exec mode.
+//		Default: 512.
+//
+//	description_cache_capacity
+//		The maximum size of the description cache used when executing a query with "cache_describe" query exec mode.
+//		Default: 512.
+func ParseConfig(connString string) (*ConnConfig, error) {
+	return ParseConfigWithOptions(connString, ParseConfigOptions{})
 }
 
 // connect connects to a database. connect takes ownership of config. The caller must not use or access it again.
@@ -305,6 +326,19 @@ func (c *Conn) Deallocate(ctx context.Context, name string) error {
 	return err
 }
 
+// DeallocateAll releases all previously prepared statements from the server and client, where it also resets the statement and description cache.
+func (c *Conn) DeallocateAll(ctx context.Context) error {
+	c.preparedStatements = map[string]*pgconn.StatementDescription{}
+	if c.config.StatementCacheCapacity > 0 {
+		c.statementCache = stmtcache.NewLRUCache(c.config.StatementCacheCapacity)
+	}
+	if c.config.DescriptionCacheCapacity > 0 {
+		c.descriptionCache = stmtcache.NewLRUCache(c.config.DescriptionCacheCapacity)
+	}
+	_, err := c.pgConn.Exec(ctx, "deallocate all").ReadAll()
+	return err
+}
+
 func (c *Conn) bufferNotifications(_ *pgconn.PgConn, n *pgconn.Notification) {
 	c.notifications = append(c.notifications, n)
 }
@@ -407,7 +441,10 @@ optionLoop:
 	}
 
 	if queryRewriter != nil {
-		sql, arguments = queryRewriter.RewriteQuery(ctx, c, sql, arguments)
+		sql, arguments, err = queryRewriter.RewriteQuery(ctx, c, sql, arguments)
+		if err != nil {
+			return pgconn.CommandTag{}, fmt.Errorf("rewrite query failed: %v", err)
+		}
 	}
 
 	// Always use simple protocol when there are no arguments.
@@ -600,7 +637,7 @@ type QueryResultFormatsByOID map[uint32]int16
 
 // QueryRewriter rewrites a query when used as the first arguments to a query method.
 type QueryRewriter interface {
-	RewriteQuery(ctx context.Context, conn *Conn, sql string, args []any) (newSQL string, newArgs []any)
+	RewriteQuery(ctx context.Context, conn *Conn, sql string, args []any) (newSQL string, newArgs []any, err error)
 }
 
 // Query sends a query to the server and returns a Rows to read the results. Only errors encountered sending the query
@@ -659,7 +696,16 @@ optionLoop:
 	}
 
 	if queryRewriter != nil {
-		sql, args = queryRewriter.RewriteQuery(ctx, c, sql, args)
+		var err error
+		originalSQL := sql
+		originalArgs := args
+		sql, args, err = queryRewriter.RewriteQuery(ctx, c, sql, args)
+		if err != nil {
+			rows := c.getRows(ctx, originalSQL, originalArgs)
+			err = fmt.Errorf("rewrite query failed: %v", err)
+			rows.fatal(err)
+			return rows, err
+		}
 	}
 
 	// Bypass any statement caching.
@@ -826,7 +872,11 @@ func (c *Conn) SendBatch(ctx context.Context, b *Batch) (br BatchResults) {
 		}
 
 		if queryRewriter != nil {
-			sql, arguments = queryRewriter.RewriteQuery(ctx, c, sql, arguments)
+			var err error
+			sql, arguments, err = queryRewriter.RewriteQuery(ctx, c, sql, arguments)
+			if err != nil {
+				return &batchResults{ctx: ctx, conn: c, err: fmt.Errorf("rewrite query failed: %v", err)}
+			}
 		}
 
 		bi.query = sql
@@ -1110,8 +1160,9 @@ func (c *Conn) LoadType(ctx context.Context, typeName string) (*pgtype.Type, err
 	}
 
 	var typtype string
+	var typbasetype uint32
 
-	err = c.QueryRow(ctx, "select typtype::text from pg_type where oid=$1", oid).Scan(&typtype)
+	err = c.QueryRow(ctx, "select typtype::text, typbasetype from pg_type where oid=$1", oid).Scan(&typtype, &typbasetype)
 	if err != nil {
 		return nil, err
 	}
@@ -1136,6 +1187,13 @@ func (c *Conn) LoadType(ctx context.Context, typeName string) (*pgtype.Type, err
 		}
 
 		return &pgtype.Type{Name: typeName, OID: oid, Codec: &pgtype.CompositeCodec{Fields: fields}}, nil
+	case "d": // domain
+		dt, ok := c.TypeMap().TypeForOID(typbasetype)
+		if !ok {
+			return nil, errors.New("domain base type OID not registered")
+		}
+
+		return &pgtype.Type{Name: typeName, OID: oid, Codec: dt.Codec}, nil
 	case "e": // enum
 		return &pgtype.Type{Name: typeName, OID: oid, Codec: &pgtype.EnumCodec{}}, nil
 	default:

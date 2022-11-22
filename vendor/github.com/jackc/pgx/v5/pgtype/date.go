@@ -5,6 +5,7 @@ import (
 	"encoding/binary"
 	"encoding/json"
 	"fmt"
+	"regexp"
 	"strconv"
 	"time"
 
@@ -193,10 +194,20 @@ func (encodePlanDateCodecText) Encode(value any, buf []byte) (newBuf []byte, err
 			bc = true
 		}
 
-		buf = strconv.AppendInt(buf, int64(year), 10)
+		yearBytes := strconv.AppendInt(make([]byte, 0, 6), int64(year), 10)
+		for i := len(yearBytes); i < 4; i++ {
+			buf = append(buf, '0')
+		}
+		buf = append(buf, yearBytes...)
 		buf = append(buf, '-')
+		if date.Time.Month() < 10 {
+			buf = append(buf, '0')
+		}
 		buf = strconv.AppendInt(buf, int64(date.Time.Month()), 10)
 		buf = append(buf, '-')
+		if date.Time.Day() < 10 {
+			buf = append(buf, '0')
+		}
 		buf = strconv.AppendInt(buf, int64(date.Time.Day()), 10)
 
 		if bc {
@@ -257,6 +268,8 @@ func (scanPlanBinaryDateToDateScanner) Scan(src []byte, dst any) error {
 
 type scanPlanTextAnyToDateScanner struct{}
 
+var dateRegexp = regexp.MustCompile(`^(\d{4,})-(\d\d)-(\d\d)( BC)?$`)
+
 func (scanPlanTextAnyToDateScanner) Scan(src []byte, dst any) error {
 	scanner := (dst).(DateScanner)
 
@@ -265,40 +278,58 @@ func (scanPlanTextAnyToDateScanner) Scan(src []byte, dst any) error {
 	}
 
 	sbuf := string(src)
+	match := dateRegexp.FindStringSubmatch(sbuf)
+	if match != nil {
+		year, err := strconv.ParseInt(match[1], 10, 32)
+		if err != nil {
+			return fmt.Errorf("BUG: cannot parse date that regexp matched (year): %v", err)
+		}
+
+		month, err := strconv.ParseInt(match[2], 10, 32)
+		if err != nil {
+			return fmt.Errorf("BUG: cannot parse date that regexp matched (month): %v", err)
+		}
+
+		day, err := strconv.ParseInt(match[3], 10, 32)
+		if err != nil {
+			return fmt.Errorf("BUG: cannot parse date that regexp matched (month): %v", err)
+		}
+
+		// BC matched
+		if len(match[4]) > 0 {
+			year = -year + 1
+		}
+
+		t := time.Date(int(year), time.Month(month), int(day), 0, 0, 0, 0, time.UTC)
+		return scanner.ScanDate(Date{Time: t, Valid: true})
+	}
+
 	switch sbuf {
 	case "infinity":
 		return scanner.ScanDate(Date{InfinityModifier: Infinity, Valid: true})
 	case "-infinity":
 		return scanner.ScanDate(Date{InfinityModifier: -Infinity, Valid: true})
 	default:
-		if len(sbuf) >= 10 {
-			year, err := strconv.ParseInt(sbuf[0:4], 10, 32)
-			if err != nil {
-				return fmt.Errorf("cannot parse year: %v", err)
-			}
-			month, err := strconv.ParseInt(sbuf[5:7], 10, 32)
-			if err != nil {
-				return fmt.Errorf("cannot parse month: %v", err)
-			}
-			day, err := strconv.ParseInt(sbuf[8:10], 10, 32)
-			if err != nil {
-				return fmt.Errorf("cannot parse day: %v", err)
-			}
-
-			if len(sbuf) == 13 && sbuf[11:] == "BC" {
-				year = -year + 1
-			}
-
-			t := time.Date(int(year), time.Month(month), int(day), 0, 0, 0, 0, time.UTC)
-			return scanner.ScanDate(Date{Time: t, Valid: true})
-		} else {
-			return fmt.Errorf("date too short")
-		}
+		return fmt.Errorf("invalid date format")
 	}
 }
 
 func (c DateCodec) DecodeDatabaseSQLValue(m *Map, oid uint32, format int16, src []byte) (driver.Value, error) {
-	return codecDecodeToTextFormat(c, m, oid, format, src)
+	if src == nil {
+		return nil, nil
+	}
+
+	var date Date
+	err := codecScan(c, m, oid, format, src, &date)
+	if err != nil {
+		return nil, err
+	}
+
+	if date.InfinityModifier != Finite {
+		return date.InfinityModifier.String(), nil
+	}
+
+	return date.Time, nil
 }
 
 func (c DateCodec) DecodeValue(m *Map, oid uint32, format int16, src []byte) (any, error) {
@@ -312,16 +343,9 @@ func (c DateCodec) DecodeValue(m *Map, oid uint32, format int16, src []byte) (an
 		return nil, err
 	}
 
-	if date.Valid {
-		switch date.InfinityModifier {
-		case Finite:
-			return date.Time, nil
-		case Infinity:
-			return "infinity", nil
-		case NegativeInfinity:
-			return "-infinity", nil
-		}
+	if date.InfinityModifier != Finite {
+		return date.InfinityModifier, nil
 	}
 
-	return nil, nil
+	return date.Time, nil
 }

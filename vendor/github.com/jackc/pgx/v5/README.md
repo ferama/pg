@@ -1,4 +1,4 @@
-[![](https://godoc.org/github.com/jackc/pgx?status.svg)](https://pkg.go.dev/github.com/jackc/pgx/v5)
+[![Go Reference](https://pkg.go.dev/badge/github.com/jackc/pgx/v5.svg)](https://pkg.go.dev/github.com/jackc/pgx/v5)
 ![Build Status](https://github.com/jackc/pgx/actions/workflows/ci.yml/badge.svg)
 
 # pgx - PostgreSQL Driver and Toolkit
@@ -84,36 +84,11 @@ It is also possible to use the `database/sql` interface and convert a connection
 
 ## Testing
 
-pgx tests naturally require a PostgreSQL database. It will connect to the database specified in the `PGX_TEST_DATABASE` environment
-variable. The `PGX_TEST_DATABASE` environment variable can either be a URL or DSN. In addition, the standard `PG*` environment
-variables will be respected. Consider using [direnv](https://github.com/direnv/direnv) to simplify environment variable
-handling.
-
-### Example Test Environment
-
-Connect to your PostgreSQL server and run:
-
-```
-create database pgx_test;
-```
-
-Connect to the newly-created database and run:
-
-```
-create domain uint64 as numeric(20,0);
-```
-
-Now, you can run the tests:
-
-```
-PGX_TEST_DATABASE="host=/var/run/postgresql database=pgx_test" go test ./...
-```
-
-In addition, there are tests specific for PgBouncer that will be executed if `PGX_TEST_PGBOUNCER_CONN_STRING` is set.
+See CONTRIBUTING.md for setup instructions.
 
 ## Supported Go and PostgreSQL Versions
 
-pgx supports the same versions of Go and PostgreSQL that are supported by their respective teams. For [Go](https://golang.org/doc/devel/release.html#policy) that is the two most recent major releases and for [PostgreSQL](https://www.postgresql.org/support/versioning/) the major releases in the last 5 years. This means pgx supports Go 1.18 and higher and PostgreSQL 10 and higher. pgx also is tested against the latest version of [CockroachDB](https://www.cockroachlabs.com/product/).
+pgx supports the same versions of Go and PostgreSQL that are supported by their respective teams. For [Go](https://golang.org/doc/devel/release.html#policy) that is the two most recent major releases and for [PostgreSQL](https://www.postgresql.org/support/versioning/) the major releases in the last 5 years. This means pgx supports Go 1.18 and higher and PostgreSQL 11 and higher. pgx also is tested against the latest version of [CockroachDB](https://www.cockroachlabs.com/product/).
 
 ## Version Policy
 
@@ -142,6 +117,11 @@ pgerrcode contains constants for the PostgreSQL error codes.
 * [github.com/jackc/pgx-gofrs-uuid](https://github.com/jackc/pgx-gofrs-uuid)
 * [github.com/jackc/pgx-shopspring-decimal](https://github.com/jackc/pgx-shopspring-decimal)
 * [github.com/vgarvardt/pgx-google-uuid](https://github.com/vgarvardt/pgx-google-uuid)
+
+
+## Adapters for 3rd Party Tracers
+
+* [https://github.com/jackhopner/pgx-xray-tracer](https://github.com/jackhopner/pgx-xray-tracer)
 
 ## Adapters for 3rd Party Loggers
 
