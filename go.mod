@@ -6,7 +6,7 @@ require (
 	github.com/charmbracelet/bubbles v0.14.0
 	github.com/charmbracelet/bubbletea v0.23.1
 	github.com/charmbracelet/lipgloss v0.6.0
-	github.com/ferama/bubble-texteditor v0.0.0-20221122162521-ddb0aca4f374
+	github.com/ferama/bubble-texteditor v0.0.0-20221123174403-fe03ed9d5203
 	github.com/jackc/pgx/v5 v5.1.1
 	github.com/juju/ansiterm v1.0.0
 	github.com/muesli/reflow v0.3.0

@@ -128,7 +128,6 @@ func (m *Model) Update(msg tea.Msg) (*Model, tea.Cmd) {
 		}
 	case tea.WindowSizeMsg:
 		m.texteditor.SetWidth(msg.Width - 2)
-		style.Width(msg.Width - 2)
 
 	case tea.KeyMsg:
 		switch msg.Type {

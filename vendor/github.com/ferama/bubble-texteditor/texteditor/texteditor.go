@@ -2,8 +2,12 @@ package texteditor
 
 import (
 	"fmt"
+	"io"
 	"strings"
 
+	"github.com/alecthomas/chroma/v2"
+	"github.com/alecthomas/chroma/v2/lexers"
+	"github.com/alecthomas/chroma/v2/styles"
 	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
@@ -75,6 +79,8 @@ type Model struct {
 	// when switching focus states.
 	style *Style
 
+	chromaStyle *chroma.Style
+
 	// How many columns should be hidden
 	xOffset int
 
@@ -91,12 +97,19 @@ func New() Model {
 
 	focusedStyle, blurredStyle := DefaultStyles()
 
+	// Determine style.
+	chromaStyle := styles.Get(defaultSyntaxColorStyle)
+	if chromaStyle == nil {
+		chromaStyle = styles.Fallback
+	}
+
 	m := Model{
 		focused:  true,
 		viewport: &vp,
 
 		highlighterStyle: defaultSyntaxColorStyle,
 		style:            &blurredStyle,
+		chromaStyle:      chromaStyle,
 		FocusedStyle:     focusedStyle,
 		BlurredStyle:     blurredStyle,
 
@@ -133,6 +146,7 @@ func (m *Model) Blur() tea.Cmd {
 	m.style = &m.BlurredStyle
 
 	m.style.LineDecorator.Width(lineDecoratorWidth)
+	m.style.CursorLine.Width(m.viewport.Width)
 	return nil
 }
 
@@ -155,6 +169,8 @@ func (m Model) SetSize(width, height int) {
 // Set textarea width
 func (m Model) SetWidth(width int) {
 	m.viewport.Width = width
+
+	m.style.CursorLine.Width(width)
 }
 
 // Set textarea height
@@ -401,6 +417,109 @@ func (m Model) Value() string {
 	return strings.TrimSuffix(v.String(), "\n")
 }
 
+// renderLine renders code line applying syntax highlights and handling cursor
+func (m Model) renderLine(w io.Writer, source string, hasCursor bool) error {
+	lexer := m.syntaxLang
+
+	// Determine lexer.
+	l := lexers.Get(lexer)
+	if l == nil {
+		l = lexers.Analyse(source)
+	}
+	if l == nil {
+		l = lexers.Fallback
+	}
+	l = chroma.Coalesce(l)
+
+	it, err := l.Tokenise(nil, source)
+	if err != nil {
+		return err
+	}
+
+	defer func() {
+		if perr := recover(); perr != nil {
+			err = perr.(error)
+		}
+	}()
+
+	theme := clearBackground(m.chromaStyle)
+	column := 0
+	doneWithCursor := false
+	cursorColumn := m.col
+	for token := it(); token != chroma.EOF; token = it() {
+		columnNext := column + len(token.Value)
+
+		// do not render offsetted columns
+		if column < m.xOffset {
+			if columnNext >= m.xOffset {
+				diff := m.xOffset - column
+				token.Value = token.Value[diff:]
+				cursorColumn += diff
+				columnNext += diff
+			} else {
+				column += len(token.Value)
+				continue
+			}
+		}
+
+		entry := theme.Get(token.Type)
+		fmt.Fprint(w, m.applyTheme(entry, hasCursor))
+
+		if hasCursor && columnNext > cursorColumn && !doneWithCursor {
+			pos := cursorColumn - column
+			tv := token.Value
+			preCursor := tv[0:pos]
+			cursor := tv[pos : pos+1]
+			postCursor := tv[pos+1:]
+
+			fmt.Fprint(w, preCursor)
+			fmt.Fprint(w, m.style.Cursor.Render(cursor))
+
+			// reapply theme resetted by cursor
+			fmt.Fprint(w, m.applyTheme(entry, hasCursor))
+			fmt.Fprint(w, postCursor)
+			doneWithCursor = true
+		} else {
+			fmt.Fprint(w, token.Value)
+		}
+
+		if !entry.IsZero() {
+			fmt.Fprint(w, "\033[0m")
+		}
+
+		column = columnNext
+	}
+	return nil
+}
+
+func (m Model) applyTheme(entry chroma.StyleEntry, hasCursor bool) string {
+	out := ""
+
+	if !entry.IsZero() {
+		if entry.Bold == chroma.Yes {
+			out += "\033[1m"
+		}
+		if entry.Underline == chroma.Yes {
+			out += "\033[4m"
+		}
+		if entry.Italic == chroma.Yes {
+			out += "\033[3m"
+		}
+		if entry.Colour.IsSet() {
+			out += fmt.Sprintf("\033[38;2;%d;%d;%dm", entry.Colour.Red(), entry.Colour.Green(), entry.Colour.Blue())
+		}
+		if entry.Background.IsSet() {
+			out += fmt.Sprintf("\033[48;2;%d;%d;%dm", entry.Background.Red(), entry.Background.Green(), entry.Background.Blue())
+		} else {
+			if hasCursor {
+				r, g, b, _ := m.style.CursorLine.GetBackground().RGBA()
+				out += fmt.Sprintf("\033[48;2;%d;%d;%dm", r, g, b)
+			}
+		}
+	}
+	return out
+}
+
 func (m Model) View() string {
 	sb := new(strings.Builder)
 
@@ -421,17 +540,16 @@ func (m Model) View() string {
 		}
 
 		hlsbs := new(strings.Builder)
-		renderLine(
+		m.renderLine(
 			hlsbs,
 			lsb.String(),
-			m.syntaxLang,
-			m.highlighterStyle,
 			haveCursor,
-			m.col,
-			m.style,
-			m.xOffset,
 		)
-		sb.WriteString(hlsbs.String())
+		if haveCursor {
+			sb.WriteString(m.style.CursorLine.Render(hlsbs.String()))
+		} else {
+			sb.WriteString(hlsbs.String())
+		}
 		sb.WriteString("\n")
 	}
 

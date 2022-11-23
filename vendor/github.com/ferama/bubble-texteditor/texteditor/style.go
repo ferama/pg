@@ -12,6 +12,7 @@ import "github.com/charmbracelet/lipgloss"
 type Style struct {
 	Base          lipgloss.Style
 	Cursor        lipgloss.Style
+	CursorLine    lipgloss.Style
 	LineDecorator lipgloss.Style
 	Text          lipgloss.Style
 }
@@ -26,12 +27,14 @@ func DefaultStyles() (Style, Style) {
 	focused := Style{
 		Base:          lipgloss.NewStyle(),
 		Cursor:        lipgloss.NewStyle().Background(lipgloss.Color("1")).Bold(true),
+		CursorLine:    lipgloss.NewStyle().Background(lipgloss.AdaptiveColor{Light: "#eee", Dark: "#333"}),
 		LineDecorator: lineDecoratorBase.Copy().Foreground(lipgloss.AdaptiveColor{Light: "249", Dark: "8"}),
 		Text:          lipgloss.NewStyle(),
 	}
 	blurred := Style{
 		Base:          lipgloss.NewStyle(),
 		Cursor:        lipgloss.NewStyle(),
+		CursorLine:    lipgloss.NewStyle().Foreground(lipgloss.AdaptiveColor{Light: "#111", Dark: "#000"}),
 		LineDecorator: lineDecoratorBase.Copy().Foreground(lipgloss.AdaptiveColor{Light: "249", Dark: "8"}),
 		Text:          lipgloss.NewStyle().Foreground(lipgloss.AdaptiveColor{Light: "245", Dark: "7"}),
 	}
