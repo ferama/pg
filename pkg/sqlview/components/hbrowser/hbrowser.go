@@ -161,6 +161,10 @@ func (m *Model) Blur() {
 }
 
 func (m *Model) Update(msg tea.Msg) (*Model, tea.Cmd) {
+	if !m.focused {
+		return m, nil
+	}
+
 	var cmds []tea.Cmd
 	var cmd tea.Cmd
 
