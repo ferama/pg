@@ -34,6 +34,21 @@ func cleanQuery(query string) string {
 	return strings.TrimSpace(strings.Join(lines, "\n"))
 }
 
+func itemToString(item any) (out string) {
+
+	// if panic, just Sprint the item
+	defer func() {
+		if recover() != nil {
+			out = fmt.Sprint(item)
+		}
+	}()
+	// try to interpret byte array as string
+	ba := item.([]byte)
+	out = string(ba[:])
+
+	return out
+}
+
 func Query(connString, dbName, schema, query string) (*QueryResults, error) {
 	if query == "" {
 		return nil, errors.New("query is empty")
@@ -111,7 +126,7 @@ func Query(connString, dbName, schema, query string) (*QueryResults, error) {
 			if item == nil {
 				row = append(row, "-")
 			} else {
-				row = append(row, fmt.Sprint(item))
+				row = append(row, itemToString(item))
 			}
 		}
 		out = append(out, row)
