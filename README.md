@@ -8,7 +8,7 @@ It aims to be simple to use with less commands to remember
 
 * very easy to use
 * support for multiple database connections
-* handy subcommands for database structure explore
+* handy subcommands for database structure exploration
 * commands autocomplete ( we all love `tab -> tab` right? :) )
 * embedded sql editor for more advanced exploration
 * query history navigation
