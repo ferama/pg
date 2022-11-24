@@ -21,7 +21,7 @@ const (
 	maxHeight     = 99
 	maxWidth      = 500
 
-	lineDecoratorWidth = 3 // a tilde and a space
+	lineDecoratorWidth = 3
 
 	defaultSyntaxColorStyle = "monokai"
 )
@@ -146,7 +146,7 @@ func (m *Model) Blur() tea.Cmd {
 	m.style = &m.BlurredStyle
 
 	m.style.LineDecorator.Width(lineDecoratorWidth)
-	m.style.CursorLine.Width(m.viewport.Width)
+	m.style.cursorLine.Width(m.viewport.Width)
 	return nil
 }
 
@@ -170,7 +170,7 @@ func (m Model) SetSize(width, height int) {
 func (m Model) SetWidth(width int) {
 	m.viewport.Width = width
 
-	m.style.CursorLine.Width(width)
+	m.style.cursorLine.Width(width)
 }
 
 // Set textarea height
@@ -446,6 +446,7 @@ func (m Model) renderLine(w io.Writer, source string, hasCursor bool) error {
 	column := 0
 	doneWithCursor := false
 	cursorColumn := m.col
+
 	for token := it(); token != chroma.EOF; token = it() {
 		columnNext := column + len(token.Value)
 
@@ -512,8 +513,12 @@ func (m Model) applyTheme(entry chroma.StyleEntry, hasCursor bool) string {
 			out += fmt.Sprintf("\033[48;2;%d;%d;%dm", entry.Background.Red(), entry.Background.Green(), entry.Background.Blue())
 		} else {
 			if hasCursor {
-				r, g, b, _ := m.style.CursorLine.GetBackground().RGBA()
-				out += fmt.Sprintf("\033[48;2;%d;%d;%dm", r, g, b)
+				// I need to hard code the values here. Taking with RGBA doesn't
+				// work
+				// 		r, g, b, _ := m.style.CursorLine.GetBackground().RGBA()
+				// 		fmt.Println(r, g, b)
+
+				out += fmt.Sprintf("\033[48;2;%d;%d;%dm", 50, 50, 50)
 			}
 		}
 	}
@@ -546,7 +551,7 @@ func (m Model) View() string {
 			haveCursor,
 		)
 		if haveCursor {
-			sb.WriteString(m.style.CursorLine.Render(hlsbs.String()))
+			sb.WriteString(m.style.cursorLine.Render(hlsbs.String()))
 		} else {
 			sb.WriteString(hlsbs.String())
 		}
