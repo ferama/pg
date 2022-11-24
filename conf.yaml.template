@@ -1,5 +1,5 @@
 connections:
   - name: db1
-    url: postgres://user1:pass1@host1:5432
+    url: postgres://user1:pass1@host1:5432/db1
   - name: db2
-    url: postgres://user2:pass2@host2:5432
+    url: postgres://user2:pass2@host2:5432/db2
