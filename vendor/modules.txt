@@ -33,7 +33,7 @@ github.com/containerd/console
 ## explicit; go 1.13
 github.com/dlclark/regexp2
 github.com/dlclark/regexp2/syntax
-# github.com/ferama/bubble-texteditor v0.0.0-20221124083148-172e071c2fd1
+# github.com/ferama/bubble-texteditor v0.0.0-20221126073426-31a6dd893084
 ## explicit; go 1.19
 github.com/ferama/bubble-texteditor/texteditor
 # github.com/fsnotify/fsnotify v1.6.0

@@ -14,8 +14,6 @@ type Style struct {
 	Cursor        lipgloss.Style
 	LineDecorator lipgloss.Style
 	Text          lipgloss.Style
-
-	cursorLine lipgloss.Style
 }
 
 // DefaultStyles returns the default styles for focused and blurred states for
@@ -30,16 +28,12 @@ func DefaultStyles() (Style, Style) {
 		Cursor:        lipgloss.NewStyle().Background(lipgloss.Color("1")).Bold(true),
 		LineDecorator: lineDecoratorBase.Copy().Foreground(lipgloss.AdaptiveColor{Light: "249", Dark: "8"}),
 		Text:          lipgloss.NewStyle(),
-
-		cursorLine: lipgloss.NewStyle().Background(lipgloss.AdaptiveColor{Light: "#eee", Dark: "#333"}),
 	}
 	blurred := Style{
 		Base:          lipgloss.NewStyle(),
 		Cursor:        lipgloss.NewStyle(),
 		LineDecorator: lineDecoratorBase.Copy().Foreground(lipgloss.AdaptiveColor{Light: "249", Dark: "8"}),
 		Text:          lipgloss.NewStyle().Foreground(lipgloss.AdaptiveColor{Light: "245", Dark: "7"}),
-
-		cursorLine: lipgloss.NewStyle().Foreground(lipgloss.AdaptiveColor{Light: "#111", Dark: "#000"}),
 	}
 
 	return focused, blurred

@@ -146,7 +146,6 @@ func (m *Model) Blur() tea.Cmd {
 	m.style = &m.BlurredStyle
 
 	m.style.LineDecorator.Width(lineDecoratorWidth)
-	m.style.cursorLine.Width(m.viewport.Width)
 	return nil
 }
 
@@ -169,8 +168,6 @@ func (m Model) SetSize(width, height int) {
 // Set textarea width
 func (m Model) SetWidth(width int) {
 	m.viewport.Width = width
-
-	m.style.cursorLine.Width(width)
 }
 
 // Set textarea height
@@ -418,7 +415,7 @@ func (m Model) Value() string {
 }
 
 // renderLine renders code line applying syntax highlights and handling cursor
-func (m Model) renderLine(w io.Writer, source string, hasCursor bool) error {
+func (m *Model) renderLine(w io.Writer, source string, hasCursor bool) error {
 	lexer := m.syntaxLang
 
 	// Determine lexer.
@@ -448,17 +445,18 @@ func (m Model) renderLine(w io.Writer, source string, hasCursor bool) error {
 	cursorColumn := m.col
 
 	for token := it(); token != chroma.EOF; token = it() {
-		columnNext := column + len(token.Value)
+		columnNext := column + len([]rune(token.Value))
 
 		// do not render offsetted columns
 		if column < m.xOffset {
 			if columnNext >= m.xOffset {
 				diff := m.xOffset - column
-				token.Value = token.Value[diff:]
+				tv := []rune(token.Value)
+				token.Value = string(tv[diff:])
 				cursorColumn += diff
 				columnNext += diff
 			} else {
-				column += len(token.Value)
+				column += len([]rune(token.Value))
 				continue
 			}
 		}
@@ -468,18 +466,20 @@ func (m Model) renderLine(w io.Writer, source string, hasCursor bool) error {
 
 		if hasCursor && columnNext > cursorColumn && !doneWithCursor {
 			pos := cursorColumn - column
-			tv := token.Value
+			tv := []rune(token.Value)
+
 			preCursor := tv[0:pos]
 			cursor := tv[pos : pos+1]
 			postCursor := tv[pos+1:]
 
-			fmt.Fprint(w, preCursor)
-			fmt.Fprint(w, m.style.Cursor.Render(cursor))
+			fmt.Fprint(w, string(preCursor))
+			fmt.Fprint(w, m.style.Cursor.Render(string(cursor)))
 
 			// reapply theme resetted by cursor
 			fmt.Fprint(w, m.applyTheme(entry, hasCursor))
-			fmt.Fprint(w, postCursor)
+			fmt.Fprint(w, string(postCursor))
 			doneWithCursor = true
+
 		} else {
 			fmt.Fprint(w, token.Value)
 		}
@@ -511,15 +511,6 @@ func (m Model) applyTheme(entry chroma.StyleEntry, hasCursor bool) string {
 		}
 		if entry.Background.IsSet() {
 			out += fmt.Sprintf("\033[48;2;%d;%d;%dm", entry.Background.Red(), entry.Background.Green(), entry.Background.Blue())
-		} else {
-			if hasCursor {
-				// I need to hard code the values here. Taking with RGBA doesn't
-				// work
-				// 		r, g, b, _ := m.style.CursorLine.GetBackground().RGBA()
-				// 		fmt.Println(r, g, b)
-
-				out += fmt.Sprintf("\033[48;2;%d;%d;%dm", 50, 50, 50)
-			}
 		}
 	}
 	return out
@@ -550,11 +541,7 @@ func (m Model) View() string {
 			lsb.String(),
 			haveCursor,
 		)
-		if haveCursor {
-			sb.WriteString(m.style.cursorLine.Render(hlsbs.String()))
-		} else {
-			sb.WriteString(hlsbs.String())
-		}
+		sb.WriteString(hlsbs.String())
 		sb.WriteString("\n")
 	}
 
