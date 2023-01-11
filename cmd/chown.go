@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/ferama/pg/pkg/autocomplete"
 	"github.com/ferama/pg/pkg/db"
 	"github.com/ferama/pg/pkg/utils"
 	"github.com/spf13/cobra"
@@ -14,9 +15,14 @@ func init() {
 }
 
 var chownCmd = &cobra.Command{
-	Use:   "chown",
-	Args:  cobra.MinimumNArgs(2),
-	Short: "Set database owner",
+	Use:               "chown",
+	Args:              cobra.MinimumNArgs(2),
+	Short:             "Set database owner",
+	ValidArgsFunction: autocomplete.Path(2),
+	Example: `
+  # change database owner
+  $ pg chown myconn/testdb myuser
+  `,
 	Run: func(cmd *cobra.Command, args []string) {
 		path := utils.ParsePath(args[0], false)
 		if path.DatabaseName != "" {
