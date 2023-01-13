@@ -59,7 +59,7 @@ func listSchemas(connString string, dbName string) {
 			distinct(n.nspname) as schema, 
 			pg_catalog.pg_get_userbyid(c.relowner) as owner
 		FROM pg_catalog.pg_class c
-		LEFT JOIN pg_catalog.pg_namespace n
+		RIGHT JOIN pg_catalog.pg_namespace n
 			ON n.oid = c.relnamespace
 		ORDER BY schema
 	`

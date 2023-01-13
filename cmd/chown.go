@@ -43,6 +43,27 @@ var chownCmd = &cobra.Command{
 				fmt.Printf("error: %v", err)
 				os.Exit(1)
 			}
+			fmt.Println("database owner set")
+		}
+		if path.SchemaName != "" {
+			owner := args[1]
+			query := fmt.Sprintf(`
+			ALTER SCHEMA %s
+			OWNER to %s
+			`, path.SchemaName, owner)
+
+			conn, err := db.GetDBFromConf(path.ConfigConnection, path.DatabaseName)
+			if err != nil {
+				fmt.Printf("unable to connect to database: %v", err)
+				os.Exit(1)
+			}
+			defer conn.Close()
+			_, err = conn.Exec(query)
+			if err != nil {
+				fmt.Printf("error: %v", err)
+				os.Exit(1)
+			}
+			fmt.Println("schema owner set")
 		}
 	},
 }
