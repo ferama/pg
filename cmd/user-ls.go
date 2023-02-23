@@ -18,7 +18,7 @@ var userLsCmd = &cobra.Command{
 	Use:               "ls",
 	Args:              cobra.MinimumNArgs(1),
 	Short:             "List users",
-	ValidArgsFunction: autocomplete.Path(2),
+	ValidArgsFunction: autocomplete.Path(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		path := utils.ParsePath(args[0], false)
 		conn, err := db.GetDBFromConf(path.ConfigConnection, "")
