@@ -30,7 +30,14 @@ var userLsCmd = &cobra.Command{
 
 		// Users
 		query := fmt.Sprintf(`
-			SELECT *
+			SELECT
+				USENAME as USERNAME,
+				USECREATEDB as CREATEDB,
+				USESUPER as ISSUPER,
+				USEREPL as REPL,
+				USEBYPASSRLS as BYPASSRLS,
+				VALUNTIL as VALUNTIL,
+				USECONFIG as CONFIG
 			FROM pg_catalog.pg_user
 			`)
 
