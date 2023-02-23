@@ -17,7 +17,7 @@ func init() {
 var userLsCmd = &cobra.Command{
 	Use:               "ls",
 	Args:              cobra.MinimumNArgs(1),
-	Short:             "list users",
+	Short:             "List users",
 	ValidArgsFunction: autocomplete.Path(2),
 	Run: func(cmd *cobra.Command, args []string) {
 		path := utils.ParsePath(args[0], false)

@@ -19,7 +19,7 @@ func init() {
 var userDelCmd = &cobra.Command{
 	Use:               "rm",
 	Args:              cobra.MinimumNArgs(1),
-	Short:             "drop a user",
+	Short:             "Drop a user",
 	ValidArgsFunction: autocomplete.Path(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		path := utils.ParsePath(args[0], false)

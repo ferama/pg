@@ -20,7 +20,7 @@ func init() {
 var userAddCmd = &cobra.Command{
 	Use:               "add",
 	Args:              cobra.MinimumNArgs(1),
-	Short:             "create a user",
+	Short:             "Create a user",
 	ValidArgsFunction: autocomplete.Path(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		path := utils.ParsePath(args[0], false)
