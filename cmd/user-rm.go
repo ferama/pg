@@ -12,13 +12,11 @@ import (
 
 func init() {
 	userCmd.AddCommand(userDelCmd)
-
-	userDelCmd.Flags().StringP("username", "u", "", "username")
 }
 
 var userDelCmd = &cobra.Command{
-	Use:               "rm",
-	Args:              cobra.MinimumNArgs(1),
+	Use:               "rm [conn] [username]",
+	Args:              cobra.MinimumNArgs(2),
 	Short:             "Drop a user",
 	ValidArgsFunction: autocomplete.Path(1),
 	Run: func(cmd *cobra.Command, args []string) {
@@ -30,7 +28,7 @@ var userDelCmd = &cobra.Command{
 		}
 		defer conn.Close()
 
-		username, _ := cmd.Flags().GetString("username")
+		username := args[1]
 
 		fmt.Printf("I'm going to drop user '%s'\n", username)
 		if utils.AskForConfirmation("\nProceed?") {

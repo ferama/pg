@@ -15,7 +15,7 @@ func init() {
 }
 
 var userLsCmd = &cobra.Command{
-	Use:               "ls",
+	Use:               "ls [conn]",
 	Args:              cobra.MinimumNArgs(1),
 	Short:             "List users",
 	ValidArgsFunction: autocomplete.Path(1),

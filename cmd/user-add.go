@@ -13,13 +13,12 @@ import (
 func init() {
 	userCmd.AddCommand(userAddCmd)
 
-	userAddCmd.Flags().StringP("username", "u", "", "username")
 	userAddCmd.Flags().StringP("password", "p", "", "add user with password")
 }
 
 var userAddCmd = &cobra.Command{
-	Use:               "add",
-	Args:              cobra.MinimumNArgs(1),
+	Use:               "add [conn] [username]",
+	Args:              cobra.MinimumNArgs(2),
 	Short:             "Create a user",
 	ValidArgsFunction: autocomplete.Path(1),
 	Run: func(cmd *cobra.Command, args []string) {
@@ -31,8 +30,8 @@ var userAddCmd = &cobra.Command{
 		}
 		defer conn.Close()
 
+		username := args[1]
 		password, _ := cmd.Flags().GetString("password")
-		username, _ := cmd.Flags().GetString("username")
 
 		query := fmt.Sprintf(`
 				create user "%s"

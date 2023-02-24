@@ -184,7 +184,7 @@ func listTableDetails(connString, dbName, schema, tableName string, details bool
 }
 
 var lsCmd = &cobra.Command{
-	Use:     "ls",
+	Use:     "ls [conn]",
 	Aliases: []string{"list"},
 	Short:   "List configuration, database, schemas, tables and fields",
 	Args:    cobra.MinimumNArgs(0),
