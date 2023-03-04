@@ -16,7 +16,7 @@ func init() {
 
 var mkCmd = &cobra.Command{
 	Use:               "mk",
-	Args:              cobra.MinimumNArgs(0),
+	Args:              cobra.MinimumNArgs(1),
 	Short:             "Create database and/or schema",
 	ValidArgsFunction: autocomplete.Path(2),
 	Example: `

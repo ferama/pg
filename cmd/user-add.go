@@ -17,9 +17,16 @@ func init() {
 }
 
 var userAddCmd = &cobra.Command{
-	Use:               "add [conn] [username]",
-	Args:              cobra.MinimumNArgs(2),
-	Short:             "Create a user",
+	Use:   "add [conn] [username]",
+	Args:  cobra.MinimumNArgs(2),
+	Short: "Create a user",
+	Example: `
+  # add user
+  $ pg user add myconn/testdb myuser
+
+  # add user with password
+  $ pg user add myconn/testdb myuser -p mypassword
+  `,
 	ValidArgsFunction: autocomplete.Path(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		path := utils.ParsePath(args[0], false)

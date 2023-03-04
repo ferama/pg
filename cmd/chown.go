@@ -15,7 +15,7 @@ func init() {
 }
 
 var chownCmd = &cobra.Command{
-	Use:               "chown",
+	Use:               "chown [conn] [user]",
 	Args:              cobra.MinimumNArgs(2),
 	Short:             "Set database owner",
 	ValidArgsFunction: autocomplete.Path(2),

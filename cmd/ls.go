@@ -119,15 +119,8 @@ func listTableDetails(connString, dbName, schema, tableName string, details bool
 			c.data_type as "data type", 
 			c.is_nullable as nullable,
 			c.numeric_precision as "precision", 
-			c.character_maximum_length as "max length", 
-			constraint_type as key,
-			ccu.table_name as "key table"
-		FROM information_schema.table_constraints tc 
-		JOIN information_schema.constraint_column_usage AS ccu 
-			USING (constraint_schema, constraint_name) 
-		RIGHT JOIN information_schema.columns AS c 
-			ON c.table_schema = tc.constraint_schema
-			AND tc.table_name = c.table_name AND ccu.column_name = c.column_name
+			c.character_maximum_length as "max length"
+		FROM information_schema.columns AS c 
 		WHERE c.table_schema = '%s'
 			AND c.table_name = '%s' 
 		ORDER BY c.column_name
