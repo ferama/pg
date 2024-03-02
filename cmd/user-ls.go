@@ -29,7 +29,7 @@ var userLsCmd = &cobra.Command{
 		defer conn.Close()
 
 		// Users
-		query := fmt.Sprintf(`
+		query := `
 			SELECT
 				USENAME as USERNAME,
 				USECREATEDB as CREATEDB,
@@ -39,7 +39,7 @@ var userLsCmd = &cobra.Command{
 				VALUNTIL as VALUNTIL,
 				USECONFIG as CONFIG
 			FROM pg_catalog.pg_user
-			`)
+			`
 
 		results, err := db.Query(path.ConfigConnection, "", "", query)
 		if err != nil {

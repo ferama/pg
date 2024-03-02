@@ -56,11 +56,16 @@ func listDatabases(connString string) {
 func listSchemas(connString string, dbName string) {
 	query := `
 		SELECT 
-			distinct(n.nspname) as schema, 
-			pg_catalog.pg_get_userbyid(c.relowner) as owner
-		FROM pg_catalog.pg_class c
-		RIGHT JOIN pg_catalog.pg_namespace n
-			ON n.oid = c.relnamespace
+			nspname AS schema,
+			usename AS owner
+  		FROM 
+			pg_namespace
+  		JOIN 
+			pg_user ON nspowner = usesysid
+   		WHERE 
+			nspname NOT LIKE 'pg_%' AND
+			nspname NOT LIKE 'information_schema' AND
+			nspname NOT LIKE 'tiger%'
 		ORDER BY schema
 	`
 	results, err := db.Query(connString, dbName, "", query)
