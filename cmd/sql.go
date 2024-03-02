@@ -29,7 +29,7 @@ var sqlCmd = &cobra.Command{
 			model := sqlview.NewMainView(path)
 			p := tea.NewProgram(model)
 
-			if err := p.Start(); err != nil {
+			if _, err := p.Run(); err != nil {
 				log.Fatal(err)
 			}
 
