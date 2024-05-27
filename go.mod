@@ -7,7 +7,7 @@ require (
 	github.com/charmbracelet/bubbletea v0.26.2
 	github.com/charmbracelet/lipgloss v0.10.0
 	github.com/ferama/bubble-texteditor v0.0.0-20221126073426-31a6dd893084
-	github.com/jackc/pgx/v5 v5.5.5
+	github.com/jackc/pgx/v5 v5.6.0
 	github.com/juju/ansiterm v1.0.0
 	github.com/muesli/reflow v0.3.0
 	github.com/spf13/cobra v1.8.0
