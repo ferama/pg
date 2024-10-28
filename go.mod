@@ -5,7 +5,7 @@ go 1.22
 require (
 	github.com/charmbracelet/bubbles v0.20.0
 	github.com/charmbracelet/bubbletea v1.1.2
-	github.com/charmbracelet/lipgloss v0.13.0
+	github.com/charmbracelet/lipgloss v0.13.1
 	github.com/ferama/bubble-texteditor v0.0.0-20221126073426-31a6dd893084
 	github.com/jackc/pgx/v5 v5.7.1
 	github.com/juju/ansiterm v1.0.0
