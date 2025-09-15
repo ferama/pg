@@ -1,12 +1,12 @@
 module github.com/ferama/pg
 
-go 1.23.0
+go 1.24.0
 
 toolchain go1.24.1
 
 require (
 	github.com/charmbracelet/bubbles v0.21.0
-	github.com/charmbracelet/bubbletea v1.3.7
+	github.com/charmbracelet/bubbletea v1.3.9
 	github.com/charmbracelet/lipgloss v1.1.0
 	github.com/ferama/bubble-texteditor v0.0.0-20221126073426-31a6dd893084
 	github.com/jackc/pgx/v5 v5.7.5
@@ -55,7 +55,7 @@ require (
 	golang.org/x/crypto v0.37.0 // indirect
 	golang.org/x/exp v0.0.0-20230905200255-921286631fa9 // indirect
 	golang.org/x/sync v0.15.0 // indirect
-	golang.org/x/sys v0.34.0 // indirect
+	golang.org/x/sys v0.36.0 // indirect
 	golang.org/x/text v0.24.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
