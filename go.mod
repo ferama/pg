@@ -1,13 +1,13 @@
 module github.com/ferama/pg
 
-go 1.24.2
+go 1.25.0
 
 require (
 	github.com/charmbracelet/bubbles v1.0.0
 	github.com/charmbracelet/bubbletea v1.3.10
 	github.com/charmbracelet/lipgloss v1.1.0
 	github.com/ferama/bubble-texteditor v0.0.0-20221126073426-31a6dd893084
-	github.com/jackc/pgx/v5 v5.8.0
+	github.com/jackc/pgx/v5 v5.9.2
 	github.com/juju/ansiterm v1.0.0
 	github.com/muesli/reflow v0.3.0
 	github.com/spf13/cobra v1.10.2
