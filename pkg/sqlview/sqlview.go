@@ -32,6 +32,8 @@ type MainView struct {
 	currentState int
 
 	historyBrowser *hbrowser.Model
+
+	intelliSensePopupHeight int
 }
 
 func NewMainView(path *utils.PathParts) *MainView {
@@ -84,7 +86,7 @@ func (m *MainView) Init() tea.Cmd {
 }
 
 func (m *MainView) setDimensions() {
-	m.resultsView.SetSize(m.terminalWidth, m.terminalHeight-(conf.SqlTextareaHeight+5))
+	m.resultsView.SetSize(m.terminalWidth, m.terminalHeight-(conf.SqlTextareaHeight+5+m.intelliSensePopupHeight))
 	m.historyBrowser.SetSize(m.terminalWidth, m.terminalHeight)
 }
 
@@ -98,6 +100,10 @@ func (m *MainView) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		cmd = m.setState()
 		cmds = append(cmds, cmd)
 
+	case editor.IntelliSenseHeightMsg:
+		m.intelliSensePopupHeight = msg.Height
+		m.setDimensions()
+
 	case tea.WindowSizeMsg:
 		m.terminalHeight = msg.Height
 		m.terminalWidth = msg.Width
@@ -109,6 +115,10 @@ func (m *MainView) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if m.currentState != defaultState {
 				m.currentState = defaultState
 			} else {
+				if m.queryView.IntelliSenseVisible() {
+					// The editor consumes Esc internally; don't quit.
+					break
+				}
 				if m.resultsView.HandleEsc() {
 					break
 				}

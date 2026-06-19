@@ -31,9 +31,17 @@ func runCommand(connString, dbName, schema, query string) {
 }
 
 var sqlCmd = &cobra.Command{
-	Use:               "sql",
-	Args:              cobra.MinimumNArgs(1),
-	Short:             "Run sql query",
+	Use:   "sql",
+	Args:  cobra.MinimumNArgs(1),
+	Short: "Run sql query",
+	Example: `  # Open the interactive SQL editor for a given schema
+  pg sql myconn/mydb/public
+
+  # Open the editor starting from a specific table (pre-fills a SELECT)
+  pg sql myconn/mydb/public/mytable
+
+  # Run a one-shot query without opening the editor
+  pg sql myconn/mydb/public -q "SELECT * FROM mytable LIMIT 10"`,
 	ValidArgsFunction: autocomplete.Path(4),
 	Run: func(cmd *cobra.Command, args []string) {
 		path := utils.ParsePath(args[0], false)
