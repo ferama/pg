@@ -12,6 +12,9 @@ build() {
         -o ./bin/pg-${GOOS}-${GOARCH}${EXT} .
 }
 
+### build the web UI so it gets embedded into the binary
+(cd web && npm ci && npm run build)
+
 ### multi arch binary build
 GOOS=linux GOARCH=arm64 build
 GOOS=linux GOARCH=amd64 build
