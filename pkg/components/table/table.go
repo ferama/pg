@@ -28,6 +28,12 @@ type Row interface {
 type SimpleRow []any
 
 // Render a simple row.
+//
+// The row-level style (selected/unselected) is intentionally NOT applied
+// here: it is applied later, after the tabwriter has flushed and aligned
+// the columns. Rendering a lipgloss style on a string containing literal
+// tab characters converts those tabs into a fixed number of spaces,
+// which defeats the tabwriter's column alignment.
 func (row SimpleRow) Render(w io.Writer, model Model, index int) {
 	cells := make([]string, 0)
 	for i, v := range row {
@@ -36,14 +42,7 @@ func (row SimpleRow) Render(w io.Writer, model Model, index int) {
 		}
 		cells = append(cells, model.Styles.Cell.Render(fmt.Sprintf("%v", v)))
 	}
-	s := strings.Join(cells, "\t")
-
-	if index == model.Cursor() && model.focused {
-		s = model.Styles.SelectedRow.Render(s)
-	} else {
-		s = model.Styles.UnselectedRow.Render(s)
-	}
-	fmt.Fprintln(w, s)
+	fmt.Fprintln(w, strings.Join(cells, "\t"))
 }
 
 // New model.
@@ -215,10 +214,9 @@ func (m *Model) updateView() {
 		}
 		cols = append(cols, m.Styles.HeaderCell.Render(c))
 	}
-	// rendering the header.
-	s := strings.Join(cols, "\t")
-	s = m.Styles.Header.Render(s)
-	fmt.Fprintln(m.tabWriter, s)
+	// rendering the header. The row-level style is applied after the
+	// tabwriter flush, once columns are aligned (see the loop below).
+	fmt.Fprintln(m.tabWriter, strings.Join(cols, "\t"))
 
 	// rendering the rows.
 	for i, row := range m.rows {
@@ -230,14 +228,24 @@ func (m *Model) updateView() {
 	content := b.String()
 	m.contentWidth = lipgloss.Width(content)
 
-	// split table at first line-break to take header and rows apart.
-	parts := strings.SplitN(content, "\n", 2)
-	if len(parts) != 0 {
-		m.header = parts[0]
-		if len(parts) == 2 {
-			m.viewPort.SetContent(strings.TrimRightFunc(parts[1], unicode.IsSpace))
+	// split table at first line-break to take header and rows apart, then
+	// apply the row-level styles now that columns are aligned.
+	lines := strings.Split(strings.TrimRightFunc(content, unicode.IsSpace), "\n")
+	if len(lines) == 0 {
+		return
+	}
+	m.header = m.Styles.Header.Render(lines[0])
+
+	rowLines := lines[1:]
+	styledRows := make([]string, len(rowLines))
+	for i, line := range rowLines {
+		if i == m.cursor && m.focused {
+			styledRows[i] = m.Styles.SelectedRow.Render(line)
+		} else {
+			styledRows[i] = m.Styles.UnselectedRow.Render(line)
 		}
 	}
+	m.viewPort.SetContent(strings.Join(styledRows, "\n"))
 }
 
 // CursorIsAtTop of the table.

@@ -55,14 +55,12 @@ func listDatabases(connString string) {
 
 func listSchemas(connString string, dbName string) {
 	query := `
-		SELECT 
+		SELECT
 			nspname AS schema,
-			usename AS owner
-  		FROM 
+			pg_catalog.pg_get_userbyid(nspowner) AS owner
+  		FROM
 			pg_namespace
-  		JOIN 
-			pg_user ON nspowner = usesysid
-   		WHERE 
+   		WHERE
 			nspname NOT LIKE 'pg_%' AND
 			nspname NOT LIKE 'information_schema' AND
 			nspname NOT LIKE 'tiger%'
